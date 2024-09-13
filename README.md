@@ -1,2 +1,2 @@
 # PARCtorch
-![PARCv2](PARCtorch/Info/arch.png)
+![PARCv2](Info/arch.png)
