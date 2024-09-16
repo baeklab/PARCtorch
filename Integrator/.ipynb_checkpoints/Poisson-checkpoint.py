@@ -14,9 +14,9 @@ class Poisson(nn.Module):
         cd_filter_1d (np.array): 1D filter for finite difference (e.g., np.array([-1.0, 1.0])).
         padding (str): Padding mode. "SYMMETRIC" in TensorFlow corresponds to "reflect" in PyTorch.
     """
-    def __init__(self, channel_size=1, cd_filter_1d=np.array([-1.0, 1.0]), padding="SYMMETRIC"):
+    def __init__(self, channel_size=1, cd_filter_1d=np.array([-1.0, 1.0]), padding_mode="SYMMETRIC"):
         super(Poisson, self).__init__()
-        self.cdiff = FiniteDifference(channel_size, cd_filter_1d, padding)
+        self.cdiff = FiniteDifference(channel_size, cd_filter_1d, padding_mode)
 
     def forward(self, vector_field):
         """
