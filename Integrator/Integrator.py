@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from Poisson import Poisson
+from .Poisson import Poisson
 
 
 class Integrator(nn.Module):

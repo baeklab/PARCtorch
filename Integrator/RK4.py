@@ -1,7 +1,7 @@
-import NumericalIntegrator as nint
+from .NumIntegrator import NumericalIntegrator
 
 
-class RK4(nint.NumericalIntegrator)
+class RK4(NumericalIntegrator):
     def __init__(self, **kwarg):
         super(RK4, self).__init__(**kwarg)
 

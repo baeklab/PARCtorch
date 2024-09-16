@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-from Advection import Advection
-from Diffusion import Diffusion
-from FiniteDifference import FiniteDifference
-from MappingAndRecon import MappingAndRecon
+from .Advection import Advection
+from .Diffusion import Diffusion
+from .FiniteDifference import FiniteDifference
+from .MappingAndRecon import MappingAndRecon
 
 
 class Differentiator(nn.Module):

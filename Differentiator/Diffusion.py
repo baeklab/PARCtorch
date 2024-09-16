@@ -14,9 +14,9 @@ class Diffusion(nn.Module):
         cd_filter_1d (np.array): 1D filter for finite difference (e.g., np.array([-1.0, 1.0])).
         padding_mode (str): Padding mode. "SYMMETRIC" in TensorFlow corresponds to "reflect" in PyTorch.
     """
-    def __init__(self, channel_size=1, cd_filter_1d=np.array([-1.0, 1.0]), padding_mode="SYMMETRIC"):
+    def __init__(self, finite_difference_method, padding_mode="SYMMETRIC"):
         super(Diffusion, self).__init__()
-        self.cdiff = FiniteDifference(channel_size, cd_filter_1d, padding_mode)
+        self.cdiff = finite_difference_method
 
     def forward(self, state_variable):
         """
