@@ -11,11 +11,9 @@ class Advection(nn.Module):
     Computes the advection term based on the state variable and velocity field.
     
     Args:
-        channel_size (int): Number of input channels for the state variable.
-        cd_filter_1d (np.array): 1D filter for finite difference (e.g., np.array([-1.0, 1.0])).
-        padding_mode (str): Padding mode. "SYMMETRIC" in TensorFlow corresponds to "reflect" in PyTorch.
+        finite_difference_method (nn.Module): Numerical method to calculate spatial deriviatives
     """
-    def __init__(self, finite_difference_method, padding_mode="SYMMETRIC"):
+    def __init__(self, finite_difference_method):
         super(Advection, self).__init__()
         self.cdiff = finite_difference_method
 
