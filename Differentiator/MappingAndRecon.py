@@ -18,7 +18,6 @@ class MappingAndRecon(nn.Module):
             in_channels=n_base_features,
             mask_channels=n_mask_channel,
             out_channels=n_base_features,
-            upsampling=False,
             padding_mode=padding_mode  # Corrected parameter name and casing
         )
         

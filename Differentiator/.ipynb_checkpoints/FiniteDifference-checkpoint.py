@@ -94,8 +94,4 @@ class FiniteDifference(nn.Module):
         x_padded_dx = F.pad(x, self.dx_pad, mode=self.padding_mode)  # [N, C, H, W + pad_left + pad_right]
         dx = self.dx_conv(x_padded_dx)  # [N, C, H, W_new]
         
-        # Align spatial dimensions by cropping
-        dy = dy[:, :, :-1, :-1]  # [N, C, H-1, W-1]
-        dx = dx[:, :, :-1, :-1]  # [N, C, H-1, W-1]
-        
         return dy, dx

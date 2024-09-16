@@ -51,14 +51,14 @@ class SPADE(nn.Module):
             torch.Tensor: The output tensor after applying SPADE normalization. Shape: [N, C, H, W].
         """
         # Resize the mask to match the input feature map's spatial dimensions
-        resize_shape = x.shape[2:]  # (H, W)
-        mask_resized = F.interpolate(mask, size=resize_shape, mode='nearest')
+        #resize_shape = x.shape[2:]  # (H, W)
+        #mask_resized = F.interpolate(mask, size=resize_shape, mode='nearest')
 
         # Compute padding size for convolution to mimic 'valid' padding with external padding
         pad_size = (self.kernel_size - 1) // 2
 
         # Pad the mask before the initial convolution
-        mask_padded = F.pad(mask_resized, pad=(pad_size, pad_size, pad_size, pad_size),
+        mask_padded = F.pad(mask, pad=(pad_size, pad_size, pad_size, pad_size),
                             mode=self.padding_mode, value=0)  # Updated parameter name
 
         # Apply the initial convolution and activation to the mask
@@ -94,7 +94,6 @@ class SPADEGeneratorUnit(nn.Module):
     - Gaussian noise addition
     - Two sequential SPADE-Conv blocks with LeakyReLU activations
     - A skip connection with a SPADE-Conv block
-    - An optional upsampling layer
 
     Args:
         in_channels (int): Number of channels in the input feature map `x`.
@@ -102,17 +101,16 @@ class SPADEGeneratorUnit(nn.Module):
         mask_channels (int): Number of channels in the input mask `mask`.
         kernel_size (int, optional): Size of the convolutional kernels. Default is 3.
         padding_mode (str, optional): Padding mode for `F.pad`. Default is 'constant'.
-        upsampling (bool, optional): Whether to apply upsampling at the end. Default is True.
     """
     def __init__(self, in_channels, out_channels, mask_channels, kernel_size=3,
-                 padding_mode='constant', upsampling=True):
+                 padding_mode='constant'):
         super(SPADEGeneratorUnit, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.mask_channels = mask_channels
         self.kernel_size = kernel_size
         self.padding_mode = padding_mode  # Renamed from pad_mode
-        self.upsampling = upsampling
+
 
         # Standard deviation for Gaussian noise
         self.noise_std = 0.05
@@ -133,12 +131,6 @@ class SPADEGeneratorUnit(nn.Module):
         self.spade_skip = SPADE(in_channels, mask_channels, kernel_size, padding_mode=padding_mode)  # Updated parameter name
         self.conv_skip = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
                                    padding=0, padding_mode='zeros')  # Zero padding
-
-        # Upsampling layer if needed
-        if self.upsampling:
-            self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        else:
-            self.upsample = None
 
     def forward(self, x, mask, add_noise=None):
         """
@@ -185,9 +177,5 @@ class SPADEGeneratorUnit(nn.Module):
 
         # Add the outputs of the main path and the skip connection
         out = conv2_out + conv_skip_out
-
-        # Apply upsampling if specified
-        if self.upsampling:
-            out = self.upsample(out)
 
         return out
