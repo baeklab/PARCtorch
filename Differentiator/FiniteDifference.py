@@ -95,13 +95,7 @@ class FiniteDifference(nn.Module):
         dx = self.dx_conv(x_padded_dx)  # [N, C, H, W_new]
         
         # Align spatial dimensions by cropping
-        if self.filter_size % 2 == 0:
-            # Even filter size: crop last row and column
-            dy = dy[:, :, :-1, :-1]  # [N, C, H-1, W-1]
-            dx = dx[:, :, :-1, :-1]  # [N, C, H-1, W-1]
-        else:
-            # Odd filter size: crop last row and column for consistency
-            dy = dy[:, :, :-1, :-1]  # [N, C, H-1, W-1]
-            dx = dx[:, :, :-1, :-1]  # [N, C, H-1, W-1]
+        dy = dy[:, :, :-1, :-1]  # [N, C, H-1, W-1]
+        dx = dx[:, :, :-1, :-1]  # [N, C, H-1, W-1]
         
         return dy, dx
