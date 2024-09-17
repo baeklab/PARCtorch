@@ -1,123 +1,155 @@
+# Utilities/ResNet.py
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import List
 
 class ResNetBlock(nn.Module):
     """
-    Residual block for ResNet.
+    Residual Block for ResNet with support for changing feature dimensions.
 
-    This block performs two convolutional operations, each followed by ReLU activation, and 
-    adds the input tensor to the output of the second convolution (skip connection).
+    This block performs two convolutional operations, each followed by ReLU activation,
+    and adds the input tensor to the output of the second convolution (skip connection).
+    If the number of input and output channels differ, a 1x1 convolution is applied to
+    the input to match the dimensions.
 
     Args:
         in_channels (int): Number of input channels.
-        kernel_size (int): Size of the convolutional kernel.
-        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'constant' (zero padding).
+        out_channels (int): Number of output channels.
+        kernel_size (int, optional): Size of the convolutional kernel. Default is 3.
+        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'reflect'.
     """
-    def __init__(self, in_channels, kernel_size=3, padding_mode='constant'):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 3, padding_mode: str = 'reflect'):
         super(ResNetBlock, self).__init__()
         self.padding_mode = padding_mode
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
-        # Padding size for 'valid' convolutions (to match the TensorFlow implementation)
+        # Determine padding size to maintain spatial dimensions
         self.pad_size = (kernel_size - 1) // 2
 
         # First convolutional layer followed by ReLU
-        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size,
-                               padding=0)  # no padding in the Conv2d, we pad externally
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=0)
         self.relu1 = nn.ReLU(inplace=True)
 
         # Second convolutional layer followed by ReLU
-        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size,
-                               padding=0)  # no padding in the Conv2d, we pad externally
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=0)
         self.relu2 = nn.ReLU(inplace=True)
 
-    def forward(self, x):
+        # Skip connection: 1x1 convolution if in_channels != out_channels
+        if in_channels != out_channels:
+            self.skip_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        else:
+            self.skip_conv = None
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Apply padding before the first convolution
-        x_padded = F.pad(x, (self.pad_size, self.pad_size, self.pad_size, self.pad_size),
-                         mode=self.padding_mode)
-        # First convolution + ReLU
-        out = self.conv1(x_padded)
+        out = F.pad(x, (self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode)
+        out = self.conv1(out)
         out = self.relu1(out)
 
         # Apply padding before the second convolution
-        out_padded = F.pad(out, (self.pad_size, self.pad_size, self.pad_size, self.pad_size),
-                           mode=self.padding_mode)
-        # Second convolution
-        out = self.conv2(out_padded)
+        out = F.pad(out, (self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode)
+        out = self.conv2(out)
 
-        # Add input (skip connection) and apply ReLU
-        out += x
+        # Adjust input dimensions if necessary
+        if self.skip_conv is not None:
+            skip = self.skip_conv(x)
+        else:
+            skip = x
+
+        # Add skip connection and apply ReLU
+        out += skip
         out = self.relu2(out)
 
         return out
 
 class ResNet(nn.Module):
     """
-    ResNet model consisting of multiple residual blocks and optional pooling.
+    ResNet model consisting of multiple residual blocks with varying feature dimensions.
 
-    The model applies two initial convolutional layers followed by 'reps' number
-    of residual blocks. Optionally applies max pooling at the end.
+    The model initializes with a convolutional layer and iteratively adds residual blocks
+    based on the provided `block_dimensions`. Optionally, it applies max pooling after
+    each residual block to reduce spatial dimensions.
 
     Args:
         in_channels (int): Number of input channels.
-        feat_dim (int): Number of output feature channels.
-        kernel_size (int): Size of the convolutional kernel.
-        reps (int): Number of residual units.
-        pooling (bool, optional): Whether to apply max pooling at the end. Default is True.
-        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'constant'.
+        block_dimensions (List[int]): List specifying the number of feature channels for each residual block.
+        kernel_size (int, optional): Size of the convolutional kernel. Default is 3.
+        pooling (bool, optional): Whether to apply max pooling after each residual block. Default is True.
+        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'reflect'.
     """
-    def __init__(self, in_channels, feat_dim, kernel_size=3, reps=2, pooling=True, padding_mode='constant'):
+    def __init__(
+        self, 
+        in_channels: int, 
+        block_dimensions: List[int], 
+        kernel_size: int = 3, 
+        pooling: bool = True, 
+        padding_mode: str = 'reflect'
+    ):
         super(ResNet, self).__init__()
         self.padding_mode = padding_mode
-        self.feat_dim = feat_dim
         self.pooling = pooling
         self.kernel_size = kernel_size
-        self.reps = reps
 
-        # Padding size for 'valid' convolutions
-        self.pad_size = (kernel_size - 1) // 2
+        # Initialize the first convolutional layer (without padding)
+        self.initial_conv = nn.Conv2d(in_channels, block_dimensions[0], kernel_size=kernel_size, padding=0)
+        self.initial_relu = nn.ReLU(inplace=True)
 
-        # Initial convolutional layers followed by ReLU
-        self.conv1 = nn.Conv2d(in_channels, feat_dim, kernel_size=kernel_size,
-                               padding=0)  # no padding in the Conv2d, we pad externally
-        self.relu1 = nn.ReLU(inplace=True)
+        # Create residual blocks based on block_dimensions
+        self.resnet_units = nn.ModuleList()
+        self.pool_layers = nn.ModuleList()
 
-        self.conv2 = nn.Conv2d(feat_dim, feat_dim, kernel_size=kernel_size,
-                               padding=0)  # no padding in the Conv2d, we pad externally
-        self.relu2 = nn.ReLU(inplace=True)
+        for i in range(len(block_dimensions)):
+            if i == 0:
+                # First block uses the initial_conv's output channels as in_channels
+                res_block = ResNetBlock(
+                    in_channels=block_dimensions[0],
+                    out_channels=block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding_mode=padding_mode
+                )
+            else:
+                # Subsequent blocks may change the number of channels
+                res_block = ResNetBlock(
+                    in_channels=block_dimensions[i-1],
+                    out_channels=block_dimensions[i],
+                    kernel_size=kernel_size,
+                    padding_mode=padding_mode
+                )
+            self.resnet_units.append(res_block)
 
-        # Residual units
-        self.resnet_units = nn.ModuleList([
-            ResNetBlock(feat_dim, kernel_size=kernel_size, padding_mode=padding_mode) for _ in range(reps)
-        ])
+            # Optionally add a pooling layer after each residual block except the last one
+            if self.pooling and i < len(block_dimensions) - 1:
+                self.pool_layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            else:
+                self.pool_layers.append(None)  # Placeholder for consistency
 
-        # Max pooling layer
-        if self.pooling:
-            self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        else:
-            self.pool = None
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Initial padding and convolution
+        out = F.pad(
+            x, 
+            (
+                (self.kernel_size - 1) // 2, 
+                (self.kernel_size - 1) // 2,
+                (self.kernel_size - 1) // 2, 
+                (self.kernel_size - 1) // 2
+            ),
+            mode=self.padding_mode
+        )
+        out = self.initial_conv(out)
+        out = self.initial_relu(out)
+        print(f"After Initial Conv: {out.shape}")
 
-    def forward(self, x):
-        # Apply padding before the first convolution
-        x_padded = F.pad(x, (self.pad_size, self.pad_size, self.pad_size, self.pad_size),
-                         mode=self.padding_mode)
-        # First convolution + ReLU
-        out = self.conv1(x_padded)
-        out = self.relu1(out)
+        # Apply residual blocks with optional pooling
+        for idx, res_block in enumerate(self.resnet_units):
+            out = res_block(out)
+            print(f"After ResNetBlock {idx + 1}: {out.shape}")
 
-        # Apply padding before the second convolution
-        out_padded = F.pad(out, (self.pad_size, self.pad_size, self.pad_size, self.pad_size),
-                           mode=self.padding_mode)
-        # Second convolution + ReLU
-        out = self.conv2(out_padded)
-        out = self.relu2(out)
-
-        # Apply the residual units
-        for unit in self.resnet_units:
-            out = unit(out)
-
-        # Apply max pooling if enabled
-        if self.pool is not None:
-            out = self.pool(out)
+            # Apply pooling if defined
+            if self.pool_layers[idx] is not None:
+                out = self.pool_layers[idx](out)
+                print(f"After Pooling {idx + 1}: {out.shape}")
 
         return out
