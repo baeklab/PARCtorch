@@ -10,11 +10,9 @@ class Diffusion(nn.Module):
     Computes the Laplacian of the state variable using finite difference filters.
     
     Args:
-        channel_size (int): Number of input channels.
-        cd_filter_1d (np.array): 1D filter for finite difference (e.g., np.array([-1.0, 1.0])).
-        padding_mode (str): Padding mode. "SYMMETRIC" in TensorFlow corresponds to "reflect" in PyTorch.
+        finite_difference_method (nn.Module): Numerical method to calculate spatial deriviatives
     """
-    def __init__(self, finite_difference_method, padding_mode="SYMMETRIC"):
+    def __init__(self, finite_difference_method):
         super(Diffusion, self).__init__()
         self.cdiff = finite_difference_method
 
@@ -26,10 +24,10 @@ class Diffusion(nn.Module):
             state_variable (torch.Tensor): Tensor of shape [N, C, H, W]
         
         Returns:
-            laplacian (torch.Tensor): Laplacian of shape [N, C, H-2, W-2] (for filter_size=2)
+            laplacian (torch.Tensor): Laplacian of shape [N, C, H, W]
         """
-        dy, dx = self.cdiff(state_variable)     # First derivatives
+        dy, dx = self.cdiff(state_variable)    # First derivatives
         dyy, _ = self.cdiff(dy)                # Second derivative w.r.t y
         _, dxx = self.cdiff(dx)                # Second derivative w.r.t x
-        laplacian = dyy + dxx                   # Sum of second derivatives
+        laplacian = dyy + dxx                  # Sum of second derivatives
         return laplacian
