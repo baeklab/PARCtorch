@@ -1,7 +1,7 @@
-import NumericalIntegrator as nint
+import .numintegrator as nint
 
 
-class RK4(nint.NumericalIntegrator)
+class Euler(nint.NumericalIntegrator)
     def __init__(self, **kwarg):
         super(RK4, self).__init__(**kwarg)
 

@@ -35,9 +35,9 @@ class SPADE(nn.Module):
 
         # Convolutional layers to generate gamma and beta parameters
         self.gamma_conv = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size,
-                                    padding=0, padding_mode='zeros')  # Zero padding
+                                    padding=0, padding_mode='zeros')
         self.beta_conv = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size,
-                                   padding=0, padding_mode='zeros')  # Zero padding
+                                   padding=0, padding_mode='zeros')
 
     def forward(self, x, mask):
         """
@@ -45,15 +45,11 @@ class SPADE(nn.Module):
 
         Args:
             x (torch.Tensor): Input feature map to be normalized. Shape: [N, C, H, W].
-            mask (torch.Tensor): Input mask providing spatial modulation. Shape: [N, M, H', W'].
+            mask (torch.Tensor): Input mask providing spatial modulation. Shape: [N, M, H, W].
 
         Returns:
             torch.Tensor: The output tensor after applying SPADE normalization. Shape: [N, C, H, W].
         """
-        # Resize the mask to match the input feature map's spatial dimensions
-        #resize_shape = x.shape[2:]  # (H, W)
-        #mask_resized = F.interpolate(mask, size=resize_shape, mode='nearest')
-
         # Compute padding size for convolution to mimic 'valid' padding with external padding
         pad_size = (self.kernel_size - 1) // 2
 
@@ -99,10 +95,11 @@ class SPADEGeneratorUnit(nn.Module):
         in_channels (int): Number of channels in the input feature map `x`.
         out_channels (int): Number of output channels after convolution.
         mask_channels (int): Number of channels in the input mask `mask`.
-        kernel_size (int, optional): Size of the convolutional kernels. Default is 3.
+        kernel_size (int, optional): Size of the convolutional kernels not in SPADE. Default is 1.
+        spade_kernel_size (int, optional): Size of the convolutional kernels in SPADE. Default is 3.
         padding_mode (str, optional): Padding mode for `F.pad`. Default is 'constant'.
     """
-    def __init__(self, in_channels, out_channels, mask_channels, kernel_size=3,
+    def __init__(self, in_channels, out_channels, mask_channels, kernel_size=1, spade_kernel_size=3,
                  padding_mode='constant'):
         super(SPADEGeneratorUnit, self).__init__()
         self.in_channels = in_channels
@@ -111,7 +108,6 @@ class SPADEGeneratorUnit(nn.Module):
         self.kernel_size = kernel_size
         self.padding_mode = padding_mode  # Renamed from pad_mode
 
-
         # Standard deviation for Gaussian noise
         self.noise_std = 0.05
 
@@ -119,20 +115,20 @@ class SPADEGeneratorUnit(nn.Module):
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 
         # SPADE and convolution layers in the main path
-        self.spade1 = SPADE(in_channels, mask_channels, kernel_size, padding_mode=padding_mode)  # Updated parameter name
+        self.spade1 = SPADE(in_channels, mask_channels, spade_kernel_size, padding_mode=padding_mode)
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
-                               padding=0, padding_mode='zeros')  # Zero padding
+                               padding=0, padding_mode='zeros')
 
-        self.spade2 = SPADE(out_channels, mask_channels, kernel_size, padding_mode=padding_mode)  # Updated parameter name
+        self.spade2 = SPADE(out_channels, mask_channels, spade_kernel_size, padding_mode=padding_mode)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size,
-                               padding=0, padding_mode='zeros')  # Zero padding
+                               padding=0, padding_mode='zeros')
 
         # SPADE and convolution layers in the skip connection
-        self.spade_skip = SPADE(in_channels, mask_channels, kernel_size, padding_mode=padding_mode)  # Updated parameter name
+        self.spade_skip = SPADE(in_channels, mask_channels, spade_kernel_size, padding_mode=padding_mode)
         self.conv_skip = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
-                                   padding=0, padding_mode='zeros')  # Zero padding
+                                   padding=0, padding_mode='zeros')
 
-    def forward(self, x, mask, add_noise=None):
+    def forward(self, x, mask, add_noise):
         """
         Forward pass of the SPADEGeneratorUnit.
 
@@ -144,9 +140,6 @@ class SPADEGeneratorUnit(nn.Module):
         Returns:
             torch.Tensor: The output tensor after processing. Shape: [N, C_out, H', W'].
         """
-        # Determine whether to add noise
-        if add_noise is None:
-            add_noise = self.training  # Default behavior: add noise during training
         if add_noise:
             noise = torch.randn_like(x) * self.noise_std
             x = x + noise
@@ -159,20 +152,20 @@ class SPADEGeneratorUnit(nn.Module):
         relu1_out = self.leaky_relu(spade1_out)
         # Pad before convolution to mimic 'valid' padding with external padding
         relu1_padded = F.pad(relu1_out, pad=(pad_size, pad_size, pad_size, pad_size),
-                             mode=self.padding_mode, value=0)  # Updated parameter name
+                             mode=self.padding_mode, value=0)
         conv1_out = self.conv1(relu1_padded)
 
         spade2_out = self.spade2(conv1_out, mask)
         relu2_out = self.leaky_relu(spade2_out)
         relu2_padded = F.pad(relu2_out, pad=(pad_size, pad_size, pad_size, pad_size),
-                             mode=self.padding_mode, value=0)  # Updated parameter name
+                             mode=self.padding_mode, value=0)
         conv2_out = self.conv2(relu2_padded)
 
         # Skip connection
         spade_skip_out = self.spade_skip(x, mask)
         relu_skip_out = self.leaky_relu(spade_skip_out)
         relu_skip_padded = F.pad(relu_skip_out, pad=(pad_size, pad_size, pad_size, pad_size),
-                                 mode=self.padding_mode, value=0)  # Updated parameter name
+                                 mode=self.padding_mode, value=0)
         conv_skip_out = self.conv_skip(relu_skip_padded)
 
         # Add the outputs of the main path and the skip connection

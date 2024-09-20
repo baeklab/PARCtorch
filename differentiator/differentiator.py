@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-from .Advection import Advection
-from .Diffusion import Diffusion
-from .FiniteDifference import FiniteDifference
-from .MappingAndRecon import MappingAndRecon
+from .advection import Advection
+from .diffusion import Diffusion
+from .finitedifference import FiniteDifference
+from .mappingandrecon import MappingAndRecon
 
 
 class Differentiator(nn.Module):
@@ -27,26 +27,26 @@ class Differentiator(nn.Module):
         An instance of Differentiator
         '''
         super(Differentiator, self).__init__(**kwarg)
-        self.list_adv = []
-        self.list_dif = []
-        self.list_mar = []
+        self.list_adv = nn.ModuleList()
+        self.list_dif = nn.ModuleList()
+        self.list_mar = nn.ModuleList()
         n_explicit_features = [0 for _ in range(n_state_var+2)]
         self.feature_extraction = feature_extraction
         self.n_state_var = n_state_var
         # Initializing advections
         for i in range(n_state_var+2):
             if i in list_adv_idx:
-                self.list_adv.append(Advection(padding_mode, finite_difference_method))
+                self.list_adv.append(Advection(finite_difference_method))
                 n_explicit_features[i] += 1
             else:
                 self.list_adv.append(None)
         # Initializing diffusions
         for i in range(n_state_var+2):
             if i in list_dif_idx:
-                self.list_adv.append(Diffusion(padding_mode, finite_difference_method))
+                self.list_dif.append(Diffusion(finite_difference_method))
                 n_explicit_features[i] += 1
             else:
-                self.list_adv.append(None)
+                self.list_dif.append(None)
         # Initializing mapping and reconstruction
         # State variables first
         for i in range(n_state_var):

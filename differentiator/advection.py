@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from .FiniteDifference import FiniteDifference
+from .finitedifference import FiniteDifference
 
 class Advection(nn.Module):
     """

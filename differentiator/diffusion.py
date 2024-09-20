@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from .FiniteDifference import FiniteDifference  # Correct relative import
+from .finitedifference import FiniteDifference  # Correct relative import
 
 class Diffusion(nn.Module):
     """

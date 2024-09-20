@@ -1,4 +1,4 @@
-from .NumIntegrator import NumericalIntegrator
+from .numintegrator import NumericalIntegrator
 
 
 class RK4(NumericalIntegrator):
