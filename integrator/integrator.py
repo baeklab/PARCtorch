@@ -20,14 +20,14 @@ class Integrator(nn.Module):
     n_poi_features (int, optional): Number of features in the PoissonBlock. Default value is 64.
     **kwarg: Other arguments that will be passed to nn.Module during initialization.
     '''
-    def __init__(self, clip:bool, list_poi_idx:list[tuple(int)], num_int:nn.Module, 
+    def __init__(self, clip:bool, list_poi_idx:list[tuple[int]], num_int:nn.Module, 
                  list_dd_int:list[nn.Module], padding_mode:str, finite_difference_method:nn.Module, 
                  poi_kernel_size:int=3, n_poi_features:int=64, **kwarg):
         super(Integrator, self).__init__(**kwarg)
         self.clip = clip
         self.numerical_integrator = num_int
         self.list_datadriven_integrator = nn.ModuleList(list_dd_int)
-        self.list_poi_idx = self_poi_idx
+        self.list_poi_idx = list_poi_idx
         self.list_poi = nn.ModuleList()
         # Initializing Poissons
         for each in list_poi_idx:
@@ -55,12 +55,12 @@ class Integrator(nn.Module):
         for _ in range(n_time_step):
             if self.clip:
                 current = torch.clamp(current, 0.0, 1.0)
+            # Poisson
+            for i in range(len(self.list_poi)):
+                idx_poi_in, idx_poi_out = self.list_poi_idx[i][:-1], self.list_poi_idx[i][-1]
+                current[:, idx_poi_out:idx_poi_out+1, :, :] = self.list_poi[i](torch.index_select(current, 1, torch.tensor(idx_poi_in).cuda()))
             # Numerical integrator
             current, update = self.numerical_integrator(f, current, step_size)
-            # Poisson
-            for i in range(len(list_poi)):
-                idx_poi_in0, idx_poi_in1, idx_poi_out = list_poi_idx[i]
-                current[:, idx_poi_out, :, :] = self.list_poi[i](torch.index_select(current, 1, torch.tensor([indx_poi_in0, indx_poi_in1])))
             # Datadriven integrator
             # State var first
             for i in range(n_state_var):
