@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from typing import Optional
 
 class UNetDownBlock(nn.Module):
     """
@@ -71,7 +72,7 @@ class UNetUpBlock(nn.Module):
             nn.LeakyReLU(negative_slope=0.2)
         )
 
-    def forward(self, x, skip_connection):
+    def forward(self, x, skip_connection: Optional[torch.Tensor]):
         # Apply transposed convolution to upsample
         x = self.upConv(x)
         # Concatenate skip connection if enabled and available

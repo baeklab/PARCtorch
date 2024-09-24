@@ -5,6 +5,8 @@ import torch.nn as nn
 import numpy as np
 from .finitedifference import FiniteDifference  # Correct relative import
 
+
+
 class Diffusion(nn.Module):
     """
     Computes the Laplacian of the state variable using finite difference filters.

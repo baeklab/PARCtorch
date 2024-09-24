@@ -46,9 +46,9 @@ class ResNetBlock(nn.Module):
         self.relu2 = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.pad(x, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0)
+        out = F.pad(x, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0.0)
         out = self.conv1(out)
-        out = F.pad(out, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0)
+        out = F.pad(out, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0.0)
         out = self.conv2(out)
         skip = self.skip_conv(x)
         out = self.relu2(out+skip)
@@ -105,9 +105,9 @@ class ResNet(nn.Module):
         self.path = nn.Sequential(*module_list)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.pad(x, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0)
+        out = F.pad(x, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0.0)
         out = self.conv1(out)
-        out = F.pad(out, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0)
+        out = F.pad(out, pad=(self.pad_size, self.pad_size, self.pad_size, self.pad_size), mode=self.padding_mode, value=0.0)
         out = self.conv2(out)
         out = self.path(out)
         return out

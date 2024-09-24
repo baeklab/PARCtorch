@@ -1,9 +1,9 @@
-import .numintegrator as nint
+from .numintegrator import NumericalIntegrator
 
 
-class Heun(nint.NumericalIntegrator)
+class Heun(NumericalIntegrator):
     def __init__(self, **kwarg):
-        super(RK4, self).__init__(**kwarg)
+        super(Heun, self).__init__(**kwarg)
 
     def forward(self, f, current, step_size):
         '''

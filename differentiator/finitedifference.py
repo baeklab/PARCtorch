@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
 class FiniteDifference(nn.Module):
     """
     Computes spatial derivatives using finite difference filters.

@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from differentiator.finitedifference import FiniteDifference  # Absolute import from Differentiator package
-from utilities.resnet import ResNet
+from ..differentiator.finitedifference import FiniteDifference
+from ..utilities.resnet import ResNet
 
 class Poisson(nn.Module):
     """

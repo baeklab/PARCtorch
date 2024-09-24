@@ -3,10 +3,11 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
 # Import custom utilities
-from utilities.spade import SPADEGeneratorUnit
-from utilities.resnet import ResNet  # Ensure ResNet is correctly implemented
+from ..utilities.spade import SPADEGeneratorUnit
+from ..utilities.resnet import ResNet  # Ensure ResNet is correctly implemented
+
+
 
 class MappingAndRecon(nn.Module):
     def __init__(self, n_base_features=128, n_mask_channel=1, 
