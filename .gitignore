@@ -6,7 +6,8 @@ __pycache__/
 *.gif
 # C extensions
 *.so
-
+# json files
+*.json
 # gifs
 *.gif
 
