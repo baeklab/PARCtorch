@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PARCtorch"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Xinlun Cheng", email="xc7ts@virginia.edu" },
   { name="Jack Beerman", email="jtb3sud@virginia.edu" },
@@ -18,6 +18,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [project.urls]
 Homepage = "https://github.com/baeklab/PARCtorch"
