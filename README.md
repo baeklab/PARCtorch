@@ -1,7 +1,7 @@
 # PARCtorch
 Physics-aware Recurrent Convolutional Neural Networks (PARCv2) in PyTorch
 
-![PARCv2](doc/arch.png)
+![PARCv2](docs/arch.png)
 
 Paper link: [arxiv](https://arxiv.org/abs/2402.12503) [ICML 2024 Proceedings](https://proceedings.mlr.press/v235/nguyen24c.html)
 
