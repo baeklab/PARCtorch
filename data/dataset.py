@@ -7,6 +7,111 @@ import logging
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+def validate_data_format(data_dirs, future_steps=1, min_max_path=None, required_channels=None):
+    """
+    Validates the format of the data directories to ensure they contain properly formatted .npy files
+    and corresponding min_max.json files.
+
+    Args:
+        data_dirs (list of str): List of directories containing preprocessed `.npy` files.
+        future_steps (int): Number of timesteps in the future the model will predict.
+        min_max_path (str, optional): Path to the JSON file containing min and max values for each channel.
+                                      If None, it will look for 'min_max.json' in each data directory.
+        required_channels (int, optional): Number of channels expected in the data.
+
+    Raises:
+        ValueError: If any of the validation checks fail.
+    """
+    logging.info("Starting data validation...")
+
+    all_files = []
+    for data_dir in data_dirs:
+        if not os.path.isdir(data_dir):
+            raise ValueError(f"Data directory '{data_dir}' does not exist or is not a directory.")
+        dir_files = sorted([
+            os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.npy')
+        ])
+        if not dir_files:
+            logging.warning(f"No .npy files found in directory '{data_dir}'.")
+        all_files.extend(dir_files)
+
+    if not all_files:
+        raise ValueError("No .npy files found in any of the specified directories.")
+
+    # Load min and max values
+    if min_max_path is None:
+        min_max_files = [
+            os.path.join(data_dir, 'min_max.json') for data_dir in data_dirs
+        ]
+        channel_min = []
+        channel_max = []
+        for mm_path in min_max_files:
+            if not os.path.exists(mm_path):
+                raise FileNotFoundError(
+                    f"Min and max values file not found at '{mm_path}'. "
+                    "Please ensure the file exists."
+                )
+            with open(mm_path, 'r') as f:
+                min_max = json.load(f)
+            if 'channel_min' not in min_max or 'channel_max' not in min_max:
+                raise ValueError(f"'channel_min' or 'channel_max' not found in '{mm_path}'.")
+            channel_min.extend(min_max['channel_min'])
+            channel_max.extend(min_max['channel_max'])
+    else:
+        if not os.path.exists(min_max_path):
+            raise FileNotFoundError(
+                f"Min and max values file not found at '{min_max_path}'. "
+                "Please ensure the file exists."
+            )
+        with open(min_max_path, 'r') as f:
+            min_max = json.load(f)
+        if 'channel_min' not in min_max or 'channel_max' not in min_max:
+            raise ValueError(f"'channel_min' or 'channel_max' not found in '{min_max_path}'.")
+        channel_min = min_max['channel_min']
+        channel_max = min_max['channel_max']
+
+    num_channels = len(channel_min)
+    if len(channel_max) != num_channels:
+        raise ValueError("Length of 'channel_min' and 'channel_max' must be the same.")
+
+    if required_channels is not None:
+        if num_channels != required_channels:
+            raise ValueError(
+                f"Number of channels in min_max.json ({num_channels}) does not match "
+                f"the required_channels ({required_channels})."
+            )
+        logging.info(f"Number of channels validated: {num_channels}")
+
+    # Validate each .npy file
+    logging.info("Validating .npy files...")
+    for file in tqdm(all_files, desc="Validating files"):
+        try:
+            data = np.load(file, mmap_mode='r')
+        except Exception as e:
+            raise ValueError(f"Error loading file '{file}': {e}")
+
+        if data.ndim != 4:
+            raise ValueError(
+                f"File '{file}' has {data.ndim} dimensions; expected 4 dimensions (timesteps, channels, height, width)."
+            )
+
+        timesteps, channels, height, width = data.shape
+        if required_channels is not None and channels != required_channels:
+            raise ValueError(
+                f"File '{file}' has {channels} channels; expected {required_channels} channels."
+            )
+        elif required_channels is None and channels != num_channels:
+            raise ValueError(
+                f"File '{file}' has {channels} channels; expected {num_channels} channels based on min_max.json."
+            )
+
+        if timesteps < future_steps + 1:
+            raise ValueError(
+                f"File '{file}' has {timesteps} timesteps; requires at least {future_steps + 1} timesteps for future_steps={future_steps}."
+            )
+
+    logging.info("Data validation completed successfully.")
+
 class GenericPhysicsDataset(Dataset):
     """
     A generic PyTorch Dataset for loading preprocessed physics data with sliding window sample generation
@@ -16,7 +121,7 @@ class GenericPhysicsDataset(Dataset):
     number of channels, and other relevant parameters.
     """
 
-    def __init__(self, data_dirs, future_steps=1, min_max_path=None, required_channels=None):
+    def __init__(self, data_dirs, future_steps=1, min_max_path=None, required_channels=None, validate=True):
         """
         Initializes the GenericPhysicsDataset.
 
@@ -26,26 +131,23 @@ class GenericPhysicsDataset(Dataset):
             future_steps (int): Number of timesteps in the future the model will predict.
             min_max_path (str, optional): Path to the JSON file containing min and max values for each channel.
                                           If None, it will look for 'min_max.json' in each data directory.
-            required_channels (int, optional): Number of channels expected in the data. If None, it will be
-                                               inferred from the min_max.json file.
+            required_channels (int, optional): Number of channels expected in the data.
+                                               If None, it will be inferred from the min_max.json file.
+            validate (bool, optional): Whether to perform data validation upon initialization. Defaults to True.
         """
+        if validate:
+            validate_data_format(data_dirs, future_steps, min_max_path, required_channels)
+
         self.data_dirs = data_dirs
         self.future_steps = future_steps
         self.files = []
 
         # Aggregate all .npy files from the specified directories
         for data_dir in data_dirs:
-            if not os.path.isdir(data_dir):
-                raise ValueError(f"Data directory '{data_dir}' does not exist or is not a directory.")
             dir_files = sorted([
                 os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.npy')
             ])
-            if not dir_files:
-                logging.warning(f"No .npy files found in directory '{data_dir}'.")
             self.files.extend(dir_files)
-
-        if not self.files:
-            raise ValueError("No .npy files found in any of the specified directories.")
 
         # Load min and max values
         if min_max_path is None:
@@ -57,60 +159,28 @@ class GenericPhysicsDataset(Dataset):
             self.channel_min = []
             self.channel_max = []
             for mm_path in min_max_files:
-                if not os.path.exists(mm_path):
-                    raise FileNotFoundError(
-                        f"Min and max values file not found at '{mm_path}'. "
-                        "Please ensure the file exists."
-                    )
                 with open(mm_path, 'r') as f:
                     min_max = json.load(f)
                 self.channel_min.extend(min_max['channel_min'])
                 self.channel_max.extend(min_max['channel_max'])
         else:
-            if not os.path.exists(min_max_path):
-                raise FileNotFoundError(
-                    f"Min and max values file not found at '{min_max_path}'. "
-                    "Please ensure the file exists."
-                )
             with open(min_max_path, 'r') as f:
                 min_max = json.load(f)
             self.channel_min = min_max['channel_min']
             self.channel_max = min_max['channel_max']
 
-        # If required_channels is specified, validate it against min_max
-        if required_channels is not None:
-            if len(self.channel_min) != required_channels or len(self.channel_max) != required_channels:
-                raise ValueError(
-                    f"Number of channels in min_max.json ({len(self.channel_min)}) does not match "
-                    f"the required_channels ({required_channels})."
-                )
-            self.num_channels = required_channels
-        else:
-            self.num_channels = len(self.channel_min)
-
-        # Validate the min and max lists
-        if len(self.channel_min) != len(self.channel_max):
-            raise ValueError("channel_min and channel_max must have the same length.")
-        
-        logging.info(f"Number of channels: {self.num_channels}")
+        # Determine the number of channels
+        self.num_channels = len(self.channel_min)
 
         # Precompute the number of samples across all files
         self.samples = []
         logging.info("Preparing dataset samples...")
         for file_idx, file in enumerate(tqdm(self.files, desc="Listing samples")):
-            try:
-                data_memmap = np.load(file, mmap_mode='r')
-                timesteps = data_memmap.shape[0]  # Shape: (timesteps, channels, height, width)
-                del data_memmap  # Close the memmap
-            except Exception as e:
-                logging.warning(f"Error loading file '{file}': {e}. Skipping this file.")
-                continue
+            data_memmap = np.load(file, mmap_mode='r')
+            timesteps = data_memmap.shape[0]  # Shape: (timesteps, channels, height, width)
+            del data_memmap  # Close the memmap
 
             max_start_t = timesteps - self.future_steps - 1
-            if max_start_t < 0:
-                logging.warning(f"File '{file}' has insufficient timesteps ({timesteps}) for future_steps={self.future_steps}. Skipping.")
-                continue  # Skip files that don't have enough timesteps
-
             for start_t in range(0, max_start_t + 1):
                 self.samples.append((file_idx, start_t))
 
@@ -118,18 +188,15 @@ class GenericPhysicsDataset(Dataset):
 
         # Precompute t1 assuming all files have the same number of timesteps
         if len(self.files) > 0:
-            try:
-                sample_memmap = np.load(self.files[0], mmap_mode='r')
-                timesteps = sample_memmap.shape[0]
-                del sample_memmap
-                whole_t = timesteps + 1  # As per original code
-                self.t1 = torch.tensor(
-                    [(i + 1) / whole_t for i in range(self.future_steps)],
-                    dtype=torch.float32
-                )  # Shape: (future_steps,)
-                self.t0 = torch.tensor(0.0, dtype=torch.float32)  # Scalar
-            except Exception as e:
-                raise ValueError(f"Error accessing timesteps from the first file: {e}")
+            sample_memmap = np.load(self.files[0], mmap_mode='r')
+            timesteps = sample_memmap.shape[0]
+            del sample_memmap
+            whole_t = timesteps + 1  # As per original code
+            self.t1 = torch.tensor(
+                [(i + 1) / whole_t for i in range(self.future_steps)],
+                dtype=torch.float32
+            )  # Shape: (future_steps,)
+            self.t0 = torch.tensor(0.0, dtype=torch.float32)  # Scalar
         else:
             raise ValueError("No valid .npy files found in the specified directories.")
 
@@ -246,9 +313,6 @@ def custom_collate_fn(batch):
     target = torch.stack(target, dim=0).permute(1, 0, 2, 3, 4)  # Shape: (future_steps, batch_size, channels, height, width)
 
     return ic, t0, t1, target
-
-
-# Assuming GenericPhysicsDataset and custom_collate_fn are already defined as per previous steps
 
 def visualize_channels(ic, t0, t1, target, channel_names=None, channel_cmaps=None, sample_index=0, batch_size=1, figsize=(25, 20)):
     """
