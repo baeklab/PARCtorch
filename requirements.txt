@@ -1,2 +1,4 @@
 torch>=2.0.0
 numpy
+matplotlib
+tqdm
