@@ -1,4 +1,4 @@
-from .numintegrator import NumericalIntegrator
+from PARCtorch.integrator.numintegrator import NumericalIntegrator
 
 
 class Euler(nint.NumericalIntegrator)

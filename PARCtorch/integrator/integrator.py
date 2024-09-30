@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .poisson import PoissonBlock
+from PARCtorch.integrator.poisson import PoissonBlock
 
 
 class Integrator(nn.Module):
@@ -65,7 +65,7 @@ class Integrator(nn.Module):
             # State var first
             for i in range(n_state_var):
                 if self.list_datadriven_integrator[i] is not None:
-                    current[:, i, :, :] = self.list_datadriven_integrator[i](update[:, i:i+1, :, :], current[:, i:i+1, :, :])
+                    current[:, i:i+1, :, :] = self.list_datadriven_integrator[i](update[:, i:i+1, :, :], current[:, i:i+1, :, :])
             if self.list_datadriven_integrator[-1] is not None:
                 current[:, -2:, :, :] = self.list_datadriven_integrator[-1](update[:, -2:, :, :], current[:, -2:, :, :])
             res.append(current.unsqueeze(0))

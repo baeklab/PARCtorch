@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 # Import custom utilities
-from ..utilities.spade import SPADEGeneratorUnit
-from ..utilities.resnet import ResNet  # Ensure ResNet is correctly implemented
+from PARCtorch.utilities.spade import SPADEGeneratorUnit
+from PARCtorch.utilities.resnet import ResNet  # Ensure ResNet is correctly implemented
 
 
 
