@@ -6,7 +6,7 @@ class Heun(NumericalIntegrator):
         super(Heun, self).__init__(**kwarg)
 
     def forward(self, f, current, step_size):
-        '''
+        """
         Heun integration. Fixed step, explicit, 2nd order.
 
         Parameters
@@ -19,13 +19,13 @@ class Heun(NumericalIntegrator):
         -------
         final_state: tensor with the same shape of ```current```, the next state and velocity varaibles
         update: tensor with the same shape of ```current```, the update in this step
-        '''
+        """
         # Compute k1
         k1 = f(current)
         # Compute k2
-        inp_k2 = current + step_size*k1 
+        inp_k2 = current + step_size * k1
         k2 = f(inp_k2)
         # Final
-        update = 1/2*(k1 + k2)
-        final_state = current + step_size*update 
+        update = 1 / 2 * (k1 + k2)
+        final_state = current + step_size * update
         return final_state, update

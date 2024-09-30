@@ -4,12 +4,12 @@ from PARCtorch.integrator.poisson import PoissonBlock
 
 
 class Integrator(nn.Module):
-    '''
+    """
     Constructor of Integrator
-    
+
     Args
     clip (bool): whether to clip the state or velocity variable before each integration step
-    list_poi_idx (list[tuple(int)]): List of channel indices for I/O of PoissonBlock. 
+    list_poi_idx (list[tuple(int)]): List of channel indices for I/O of PoissonBlock.
                                      The last element in each tuple will be the channel index to output to, the 2nd and 3rd last will be assumed as a vector,
                                      and the rest as state variables.
     num_int (nn.Module): Numerical integrator
@@ -19,10 +19,20 @@ class Integrator(nn.Module):
     poi_kernel_size (int, optional): Kernel size of the PoissonBlock. Default value is 3.
     n_poi_features (int, optional): Number of features in the PoissonBlock. Default value is 64.
     **kwarg: Other arguments that will be passed to nn.Module during initialization.
-    '''
-    def __init__(self, clip:bool, list_poi_idx:list[tuple[int]], num_int:nn.Module, 
-                 list_dd_int:list[nn.Module], padding_mode:str, finite_difference_method:nn.Module, 
-                 poi_kernel_size:int=3, n_poi_features:int=64, **kwarg):
+    """
+
+    def __init__(
+        self,
+        clip: bool,
+        list_poi_idx: list[tuple[int]],
+        num_int: nn.Module,
+        list_dd_int: list[nn.Module],
+        padding_mode: str,
+        finite_difference_method: nn.Module,
+        poi_kernel_size: int = 3,
+        n_poi_features: int = 64,
+        **kwarg,
+    ):
         super(Integrator, self).__init__(**kwarg)
         self.clip = clip
         self.numerical_integrator = num_int
@@ -31,10 +41,18 @@ class Integrator(nn.Module):
         self.list_poi = nn.ModuleList()
         # Initializing Poissons
         for each in list_poi_idx:
-            self.list_poi.append(PoissonBlock(len(each)-1, finite_difference_method, poi_kernel_size, n_poi_features, padding_mode))
+            self.list_poi.append(
+                PoissonBlock(
+                    len(each) - 1,
+                    finite_difference_method,
+                    poi_kernel_size,
+                    n_poi_features,
+                    padding_mode,
+                )
+            )
 
     def forward(self, f, ic, t0, t1):
-        '''
+        """
         Forward of Integrator. It will clip the current state and velocity variable (if necessary), go through the numerical integrator and then datadriven integrator.
 
         Args
@@ -46,7 +64,7 @@ class Integrator(nn.Module):
 
         Returns
         res (torch.tensor): 5-d tensor of Float with the shape (timesteps, batch_size, channels, y, x), the predicted state and velocity variables at each time in t1
-        '''
+        """
         step_size, n_time_step = t1[0] - t0, t1.shape[0]
         n_channel = ic.shape[1]
         n_state_var = n_channel - 2
@@ -57,17 +75,37 @@ class Integrator(nn.Module):
                 current = torch.clamp(current, 0.0, 1.0)
             # Poisson
             for i in range(len(self.list_poi)):
-                idx_poi_in, idx_poi_out = self.list_poi_idx[i][:-1], self.list_poi_idx[i][-1]
-                current[:, idx_poi_out:idx_poi_out+1, :, :] = self.list_poi[i](torch.index_select(current, 1, torch.tensor(idx_poi_in).cuda()))
+                idx_poi_in, idx_poi_out = (
+                    self.list_poi_idx[i][:-1],
+                    self.list_poi_idx[i][-1],
+                )
+                current[:, idx_poi_out : idx_poi_out + 1, :, :] = (
+                    self.list_poi[
+                        i
+                    ](
+                        torch.index_select(
+                            current, 1, torch.tensor(idx_poi_in).cuda()
+                        )
+                    )
+                )
             # Numerical integrator
             current, update = self.numerical_integrator(f, current, step_size)
             # Datadriven integrator
             # State var first
             for i in range(n_state_var):
                 if self.list_datadriven_integrator[i] is not None:
-                    current[:, i:i+1, :, :] = self.list_datadriven_integrator[i](update[:, i:i+1, :, :], current[:, i:i+1, :, :])
+                    current[:, i : i + 1, :, :] = (
+                        self.list_datadriven_integrator[
+                            i
+                        ](
+                            update[:, i : i + 1, :, :],
+                            current[:, i : i + 1, :, :],
+                        )
+                    )
             if self.list_datadriven_integrator[-1] is not None:
-                current[:, -2:, :, :] = self.list_datadriven_integrator[-1](update[:, -2:, :, :], current[:, -2:, :, :])
+                current[:, -2:, :, :] = self.list_datadriven_integrator[-1](
+                    update[:, -2:, :, :], current[:, -2:, :, :]
+                )
             res.append(current.unsqueeze(0))
         res = torch.cat(res, 0)
         return res

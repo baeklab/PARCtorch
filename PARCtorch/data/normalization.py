@@ -1,11 +1,12 @@
-#/Parctorch/Data/Normalization.py
+# /Parctorch/Data/Normalization.py
 
 import os
 import json
 import numpy as np
 import argparse
 
-def compute_min_max(data_dirs, output_file='min_max.json'):
+
+def compute_min_max(data_dirs, output_file="min_max.json"):
     """
     Computes the min and max values for each channel across multiple datasets.
 
@@ -20,16 +21,24 @@ def compute_min_max(data_dirs, output_file='min_max.json'):
     all_files = []
     for data_dir in data_dirs:
         if not os.path.isdir(data_dir):
-            raise ValueError(f"Data directory '{data_dir}' does not exist or is not a directory.")
-        files = sorted([
-            os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.npy')
-        ])
+            raise ValueError(
+                f"Data directory '{data_dir}' does not exist or is not a directory."
+            )
+        files = sorted(
+            [
+                os.path.join(data_dir, f)
+                for f in os.listdir(data_dir)
+                if f.endswith(".npy")
+            ]
+        )
         if not files:
             print(f"Warning: No .npy files found in directory '{data_dir}'.")
         all_files.extend(files)
-    
+
     if not all_files:
-        raise ValueError("No .npy files found in any of the specified directories.")
+        raise ValueError(
+            "No .npy files found in any of the specified directories."
+        )
 
     # Initialize min and max lists dynamically based on the first file
     try:
@@ -38,8 +47,10 @@ def compute_min_max(data_dirs, output_file='min_max.json'):
         raise ValueError(f"Error loading file '{all_files[0]}': {e}") from e
 
     if sample_data.ndim != 4:
-        raise ValueError(f"Data in '{all_files[0]}' is expected to have 4 dimensions (timesteps, channels, height, width).")
-    
+        raise ValueError(
+            f"Data in '{all_files[0]}' is expected to have 4 dimensions (timesteps, channels, height, width)."
+        )
+
     _, channels, _, _ = sample_data.shape
     channel_min = [np.inf] * channels
     channel_max = [-np.inf] * channels
@@ -52,10 +63,14 @@ def compute_min_max(data_dirs, output_file='min_max.json'):
         try:
             data = np.load(file)  # Shape: (timesteps, channels, height, width)
             if data.ndim != 4:
-                raise ValueError(f"Data in '{file}' does not have 4 dimensions.")
+                raise ValueError(
+                    f"Data in '{file}' does not have 4 dimensions."
+                )
             _, file_channels, _, _ = data.shape
             if file_channels != channels:
-                raise ValueError(f"File '{file}' has {file_channels} channels, expected {channels}.")
+                raise ValueError(
+                    f"File '{file}' has {file_channels} channels, expected {channels}."
+                )
         except Exception as e:
             print(f"Error loading file '{file}': {e}. Skipping this file.")
             continue
@@ -80,23 +95,37 @@ def compute_min_max(data_dirs, output_file='min_max.json'):
     # Convert NumPy floats to Python floats for JSON serialization
     min_max = {
         "channel_min": [float(x) for x in channel_min],
-        "channel_max": [float(x) for x in channel_max]
+        "channel_max": [float(x) for x in channel_max],
     }
 
     # Save the min and max values to a JSON file
     try:
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(min_max, f, indent=4)
         print(f"Min and max values saved to '{os.path.abspath(output_file)}'.")
     except Exception as e:
-        raise IOError(f"Failed to write min and max values to '{output_file}': {e}") from e
+        raise IOError(
+            f"Failed to write min and max values to '{output_file}': {e}"
+        ) from e
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute min and max values for dataset normalization across multiple directories.")
-    parser.add_argument('--data_dirs', type=str, nargs='+', required=True,
-                        help='List of paths to data directories containing .npy files (e.g., --data_dirs train/ test/).')
-    parser.add_argument('--output_file', type=str, default='min_max.json',
-                        help='Name of the output JSON file to save min and max values.')
+    parser = argparse.ArgumentParser(
+        description="Compute min and max values for dataset normalization across multiple directories."
+    )
+    parser.add_argument(
+        "--data_dirs",
+        type=str,
+        nargs="+",
+        required=True,
+        help="List of paths to data directories containing .npy files (e.g., --data_dirs train/ test/).",
+    )
+    parser.add_argument(
+        "--output_file",
+        type=str,
+        default="min_max.json",
+        help="Name of the output JSON file to save min and max values.",
+    )
 
     args = parser.parse_args()
     compute_min_max(args.data_dirs, output_file=args.output_file)

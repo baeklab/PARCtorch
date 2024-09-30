@@ -6,7 +6,7 @@ class Euler(NumericalIntegrator):
         super(Euler, self).__init__(**kwarg)
 
     def forward(self, f, current, step_size):
-        '''
+        """
         Euler integration. Fixed step, 1st order.
 
         Args
@@ -17,7 +17,7 @@ class Euler(NumericalIntegrator):
         Returns
         final_state (torch.tensor): the same shape as ```current```, the next state and velocity varaibles
         update (torch.tensor): the same shape as ```current```, the updates at this step
-        '''
+        """
         update = f(current)
-        final_state = current + step_size*update 
+        final_state = current + step_size * update
         return final_state, update
