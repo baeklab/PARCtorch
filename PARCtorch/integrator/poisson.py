@@ -3,8 +3,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from PARCtorch.differentiator.finitedifference import FiniteDifference
 from PARCtorch.utilities.resnet import ResNet
 
 class Poisson(nn.Module):

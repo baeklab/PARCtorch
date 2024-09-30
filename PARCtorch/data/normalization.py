@@ -4,7 +4,6 @@ import os
 import json
 import numpy as np
 import argparse
-import torch
 
 def compute_min_max(data_dirs, output_file='min_max.json'):
     """

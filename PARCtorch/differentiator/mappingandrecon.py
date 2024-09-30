@@ -1,8 +1,6 @@
 # Differentiator/MappingAndRecon.py
 
-import torch
 import torch.nn as nn
-import numpy as np
 # Import custom utilities
 from PARCtorch.utilities.spade import SPADEGeneratorUnit
 from PARCtorch.utilities.resnet import ResNet  # Ensure ResNet is correctly implemented

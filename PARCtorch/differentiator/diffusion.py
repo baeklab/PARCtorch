@@ -1,9 +1,6 @@
 # Differentiator/Diffusion.py
 
-import torch
 import torch.nn as nn
-import numpy as np
-from PARCtorch.differentiator.finitedifference import FiniteDifference  # Correct relative import
 
 
 

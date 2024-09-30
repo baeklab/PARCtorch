@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from PARCtorch.differentiator.advection import Advection
 from PARCtorch.differentiator.diffusion import Diffusion
-from PARCtorch.differentiator.finitedifference import FiniteDifference
 from PARCtorch.differentiator.mappingandrecon import MappingAndRecon
 
 
