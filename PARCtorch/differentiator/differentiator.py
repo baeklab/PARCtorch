@@ -15,6 +15,7 @@ class Differentiator(nn.Module):
         feature_extraction,
         padding_mode,
         finite_difference_method,
+        spade_random_noise,
         **kwarg,
     ):
         """
@@ -29,6 +30,7 @@ class Differentiator(nn.Module):
         feature_extraction: torch.nn.Module, feature extraction network. It is expected to have input size of (batch_size, n_state_var+2, y, x) and output size of (batch_size, n_fe_features, y, x)
         padding_mode: string, padding mode for MappingAndRecon
         finite_difference_method: torch.nn.Module, numerical method to calculate finite difference. ```forward()``` of this module should be implemented to calculate spacial deriviatives.
+        spade_random_noise (bool): whether to add noise in mapping and reconstruction modules or not.
         **kwarg: other arugments to be passed to torch.nn.Module
 
         Returns
@@ -66,7 +68,7 @@ class Differentiator(nn.Module):
                 # One or more explicit feature
                 self.list_mar.append(
                     MappingAndRecon(
-                        n_fe_features, n_explicit_features[i], 1, padding_mode
+                        n_fe_features, n_explicit_features[i], 1, padding_mode, spade_random_noise
                     )
                 )
         # Velocity variables second
@@ -79,6 +81,7 @@ class Differentiator(nn.Module):
                     n_explicit_features[-1] + n_explicit_features[-2],
                     2,
                     padding_mode,
+                    spade_random_noise
                 )
             )
 

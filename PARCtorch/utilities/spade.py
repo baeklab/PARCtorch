@@ -210,7 +210,7 @@ class SPADEGeneratorUnit(nn.Module):
         Returns:
             torch.Tensor: The output tensor after processing. Shape: [N, C_out, H', W'].
         """
-        if add_noise:
+        if add_noise and self.training:
             noise = torch.randn_like(x) * self.noise_std
             x = x + noise
 
