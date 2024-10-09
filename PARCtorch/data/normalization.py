@@ -3,7 +3,6 @@
 import os
 import json
 import numpy as np
-import argparse
 import torch
 
 def compute_min_max(data_dirs, output_file='min_max.json'):
@@ -91,13 +90,3 @@ def compute_min_max(data_dirs, output_file='min_max.json'):
         print(f"Min and max values saved to '{os.path.abspath(output_file)}'.")
     except Exception as e:
         raise IOError(f"Failed to write min and max values to '{output_file}': {e}") from e
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute min and max values for dataset normalization across multiple directories.")
-    parser.add_argument('--data_dirs', type=str, nargs='+', required=True,
-                        help='List of paths to data directories containing .npy files (e.g., --data_dirs train/ test/).')
-    parser.add_argument('--output_file', type=str, default='min_max.json',
-                        help='Name of the output JSON file to save min and max values.')
-
-    args = parser.parse_args()
-    compute_min_max(args.data_dirs, output_file=args.output_file)
