@@ -29,8 +29,9 @@ class Advection(nn.Module):
         """
         dy, dx = self.cdiff(state_variable)  # Each of shape [N, 1, H, W]
         spatial_deriv = torch.cat(
-            [dx, dy], dim=1
-            #[dy, dx], dim=1
+            [dx, dy],
+            dim=1,
+            # [dy, dx], dim=1
         )  # Concatenate along channel dimension: [N, 2, H, W]
         advect = torch.sum(
             spatial_deriv * velocity_field, dim=1, keepdim=True

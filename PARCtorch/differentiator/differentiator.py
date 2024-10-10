@@ -68,7 +68,11 @@ class Differentiator(nn.Module):
                 # One or more explicit feature
                 self.list_mar.append(
                     MappingAndRecon(
-                        n_fe_features, n_explicit_features[i], 1, padding_mode, spade_random_noise
+                        n_fe_features,
+                        n_explicit_features[i],
+                        1,
+                        padding_mode,
+                        spade_random_noise,
                     )
                 )
         # Velocity variables second
@@ -81,7 +85,7 @@ class Differentiator(nn.Module):
                     n_explicit_features[-1] + n_explicit_features[-2],
                     2,
                     padding_mode,
-                    spade_random_noise
+                    spade_random_noise,
                 )
             )
 
