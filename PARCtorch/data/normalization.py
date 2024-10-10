@@ -3,7 +3,6 @@
 import os
 import json
 import numpy as np
-import torch
 
 
 def compute_min_max(data_dirs, output_file="min_max.json"):
@@ -104,4 +103,6 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
             json.dump(min_max, f, indent=4)
         print(f"Min and max values saved to '{os.path.abspath(output_file)}'.")
     except Exception as e:
-        raise IOError(f"Failed to write min and max values to '{output_file}': {e}") from e
+        raise IOError(
+            f"Failed to write min and max values to '{output_file}': {e}"
+        ) from e

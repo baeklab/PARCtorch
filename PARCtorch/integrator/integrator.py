@@ -95,9 +95,7 @@ class Integrator(nn.Module):
             for i in range(n_state_var):
                 if self.list_datadriven_integrator[i] is not None:
                     current[:, i : i + 1, :, :] = (
-                        self.list_datadriven_integrator[
-                            i
-                        ](
+                        self.list_datadriven_integrator[i](
                             update[:, i : i + 1, :, :],
                             current[:, i : i + 1, :, :],
                         )
