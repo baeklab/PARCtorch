@@ -1,0 +1,25 @@
+To execute the default application inside the container, run:
+apptainer run --nv $CONTAINERDIR/pytorch-2.4.0.sif
+
+This container is based on NGC 24.05
+https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/rel-24-05.html
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+INFO:    underlay of /etc/localtime required more than 50 (108) bind mounts
+15:4: not a valid test operator:  
+15:4: not a valid test operator: 12.4
+21:4: not a valid test operator: (
+21:4: not a valid test operator: 550.54.14
+WARNING: Requirement './PARCtorch-0.2.2-py3-none-any.whl' looks like a filename, but the file does not exist
+ERROR: Could not install packages due to an OSError: [Errno 2] No such file or directory: '/sfs/qumulo/qhome/jtb3sud/PARCtorch/PARCtorch/scripts/PARCtorch-0.2.2-py3-none-any.whl'
+
+
+[notice] A new release of pip is available: 24.0 -> 24.2
+[notice] To update, run: python -m pip install --upgrade pip
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+INFO:    underlay of /etc/localtime required more than 50 (108) bind mounts
+INFO:    underlay of /usr/bin/nvidia-smi required more than 50 (568) bind mounts
+15:4: not a valid test operator:  
+15:4: not a valid test operator: 12.4
+21:4: not a valid test operator: (
+21:4: not a valid test operator: 550.54.14
+python: can't open file '/sfs/qumulo/qhome/jtb3sud/PARCtorch/PARCtorch/scripts/python': [Errno 2] No such file or directory

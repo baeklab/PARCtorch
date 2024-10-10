@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import imageio
+import pickle
 
 
 def save_gifs_for_channels(
@@ -242,3 +243,23 @@ def save_gifs_with_ground_truth(
         gif_filename = f"{filename_prefix}_{channel_name}.gif"
         imageio.mimsave(gif_filename, frames, duration=interval, loop=0)
         print(f"GIF saved to {gif_filename}")
+<<<<<<< HEAD
+        
+        
+        
+# Method to visualize the loss from a pickle file
+def visualize_loss(loss_file_path):
+    # Load the loss values from the pickle file
+    with open(loss_file_path, 'rb') as f:
+        epoch_losses = pickle.load(f)
+
+    # Create a plot for the loss values
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(epoch_losses) + 1), epoch_losses, marker='o', linestyle='-', color='b')
+    plt.title('Training Loss per Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.show()
+=======
+>>>>>>> main
