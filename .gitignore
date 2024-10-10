@@ -12,7 +12,8 @@ __pycache__/
 *.json
 # gifs
 *.gif
-
+# virtualenv
+docs_env/
 # Distribution / packaging
 .Python
 build/
