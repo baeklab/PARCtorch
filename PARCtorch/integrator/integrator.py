@@ -96,13 +96,13 @@ class Integrator(nn.Module):
                 if self.list_datadriven_integrator[i] is not None:
                     current[:, i : i + 1, :, :] = (
                         self.list_datadriven_integrator[i](
-                            update[:, i : i + 1, :, :],
-                            current[:, i : i + 1, :, :],
+                            update[:, i : i + 1, :, :].clone(),
+                            current[:, i : i + 1, :, :].clone(),
                         )
                     )
             if self.list_datadriven_integrator[-1] is not None:
                 current[:, -2:, :, :] = self.list_datadriven_integrator[-1](
-                    update[:, -2:, :, :], current[:, -2:, :, :]
+                    update[:, -2:, :, :].clone(), current[:, -2:, :, :].clone()
                 )
             res.append(current.unsqueeze(0))
         res = torch.cat(res, 0)
