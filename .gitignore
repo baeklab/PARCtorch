@@ -43,6 +43,13 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+# Model weights
+*.pt
+*.pth
+
+# slurm files
+*.err
+*.out
 
 # Unit test / coverage reports
 htmlcov/
