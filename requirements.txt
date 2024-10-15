@@ -2,7 +2,8 @@ torch>=2.0.0
 numpy
 matplotlib
 tqdm
-sphinx
-sphinx_rtd_theme
-sphinx-autodoc-typehints
-myst-parser
+# optional for documentation purposes only
+# sphinx
+# sphinx_rtd_theme
+# sphinx-autodoc-typehints
+# myst-parser
