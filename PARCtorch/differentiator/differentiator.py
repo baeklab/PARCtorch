@@ -5,7 +5,7 @@ from PARCtorch.differentiator.diffusion import Diffusion
 from PARCtorch.differentiator.mappingandrecon import MappingAndRecon
 
 
-class Differentiator(nn.Module):
+class ADRDifferentiator(nn.Module):
     def __init__(
         self,
         n_state_var,
@@ -37,7 +37,7 @@ class Differentiator(nn.Module):
         -------
         An instance of Differentiator
         """
-        super(Differentiator, self).__init__(**kwarg)
+        super(ADRDifferentiator, self).__init__(**kwarg)
         self.list_adv = nn.ModuleList()
         self.list_dif = nn.ModuleList()
         self.list_mar = nn.ModuleList()
