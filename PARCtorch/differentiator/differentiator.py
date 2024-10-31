@@ -89,7 +89,7 @@ class ADRDifferentiator(nn.Module):
                 )
             )
 
-    def forward(self, current):
+    def forward(self, t, current):
         """
         Forward of differentiator. Advection and diffusion will be calculated per channel for those necessary and combined with dynamic features.
         Those that do not have explicit advection and diffusion calculation will have zero has output. This design choice was made because of
@@ -97,6 +97,7 @@ class ADRDifferentiator(nn.Module):
 
         Parameters
         ----------
+        t: torch.tensor, float scalar for current time
         current: 4-d tensor of Float with shape (batch_size, channels, y, x), the current state and velocity variables
 
         Returns
