@@ -73,6 +73,8 @@ class Integrator(nn.Module):
         for _ in range(n_time_step):
             if self.clip:
                 current = torch.clamp(current, 0.0, 1.0)
+            # Numerical integrator
+            current, update = self.numerical_integrator(f, current, step_size)
             # Poisson
             for i in range(len(self.list_poi)):
                 idx_poi_in, idx_poi_out = (
@@ -88,8 +90,6 @@ class Integrator(nn.Module):
                         )
                     )
                 )
-            # Numerical integrator
-            current, update = self.numerical_integrator(f, current, step_size)
             # Datadriven integrator
             current_ddi = []
             # State var first
