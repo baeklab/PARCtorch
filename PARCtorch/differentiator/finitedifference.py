@@ -24,7 +24,7 @@ class FiniteDifference(nn.Module):
         filter_1d=np.array([-1.0, 1.0]),
         padding_mode="replicate",
         device="cuda",
-        right_bottom=True
+        right_bottom=True,
     ):
         super(FiniteDifference, self).__init__()
 

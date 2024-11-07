@@ -74,7 +74,9 @@ class Integrator(nn.Module):
             if self.clip:
                 current = torch.clamp(current, 0.0, 1.0)
             # Numerical integrator
-            current, update = self.numerical_integrator(f, all_time[ts-1], current, all_time[ts] - all_time[ts-1])
+            current, update = self.numerical_integrator(
+                f, all_time[ts - 1], current, all_time[ts] - all_time[ts - 1]
+            )
             # Poisson
             for i in range(len(self.list_poi)):
                 idx_poi_in, idx_poi_out = (
@@ -95,11 +97,20 @@ class Integrator(nn.Module):
             # State var first
             for i in range(n_state_var):
                 if self.list_datadriven_integrator[i] is not None:
-                    current_ddi.append(self.list_datadriven_integrator[i](update[:, i : i + 1, :, :], current[:, i : i + 1, :, :]))
+                    current_ddi.append(
+                        self.list_datadriven_integrator[i](
+                            update[:, i : i + 1, :, :],
+                            current[:, i : i + 1, :, :],
+                        )
+                    )
                 else:
-                    current_ddi.append(current[:, i:i+1, :, :])
+                    current_ddi.append(current[:, i : i + 1, :, :])
             if self.list_datadriven_integrator[-1] is not None:
-                current_ddi.append(self.list_datadriven_integrator[-1](update[:, -2:, :, :], current[:, -2:, :, :]))
+                current_ddi.append(
+                    self.list_datadriven_integrator[-1](
+                        update[:, -2:, :, :], current[:, -2:, :, :]
+                    )
+                )
             else:
                 current_ddi.append(current[:, -2:, :, :])
             # Put them into an tensor

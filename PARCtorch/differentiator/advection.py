@@ -41,7 +41,7 @@ class Advection(nn.Module):
 
 class AdvectionUpwind(nn.Module):
     """
-    Computes the advection term based on the state variable and velocity field, using upwind scheme. 
+    Computes the advection term based on the state variable and velocity field, using upwind scheme.
     When velocity is positive, the left deriviative will be used. When velocity is negative, the right deriviative will be used.
 
     Args:
