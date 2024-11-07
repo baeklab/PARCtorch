@@ -65,14 +65,18 @@ class Integrator(nn.Module):
         Returns
         res (torch.tensor): 5-d tensor of Float with the shape (timesteps, batch_size, channels, y, x), the predicted state and velocity variables at each time in t1
         """
-        step_size, n_time_step = t1[0] - t0, t1.shape[0]
+        all_time = torch.cat([t0.unsqueeze(0), t1])
         n_channel = ic.shape[1]
         n_state_var = n_channel - 2
         res = []
         current = ic
-        for _ in range(n_time_step):
+        for ts in range(1, all_time.shape[0]):
             if self.clip:
                 current = torch.clamp(current, 0.0, 1.0)
+            # Numerical integrator
+            current, update = self.numerical_integrator(
+                f, all_time[ts - 1], current, all_time[ts] - all_time[ts - 1]
+            )
             # Poisson
             for i in range(len(self.list_poi)):
                 idx_poi_in, idx_poi_out = (
@@ -88,22 +92,29 @@ class Integrator(nn.Module):
                         )
                     )
                 )
-            # Numerical integrator
-            current, update = self.numerical_integrator(f, current, step_size)
             # Datadriven integrator
+            current_ddi = []
             # State var first
             for i in range(n_state_var):
                 if self.list_datadriven_integrator[i] is not None:
-                    current[:, i : i + 1, :, :] = (
+                    current_ddi.append(
                         self.list_datadriven_integrator[i](
-                            update[:, i : i + 1, :, :].clone(),
-                            current[:, i : i + 1, :, :].clone(),
+                            update[:, i : i + 1, :, :],
+                            current[:, i : i + 1, :, :],
                         )
                     )
+                else:
+                    current_ddi.append(current[:, i : i + 1, :, :])
             if self.list_datadriven_integrator[-1] is not None:
-                current[:, -2:, :, :] = self.list_datadriven_integrator[-1](
-                    update[:, -2:, :, :].clone(), current[:, -2:, :, :].clone()
+                current_ddi.append(
+                    self.list_datadriven_integrator[-1](
+                        update[:, -2:, :, :], current[:, -2:, :, :]
+                    )
                 )
+            else:
+                current_ddi.append(current[:, -2:, :, :])
+            # Put them into an tensor
+            current = torch.cat(current_ddi, 1)
             res.append(current.unsqueeze(0))
         res = torch.cat(res, 0)
         return res

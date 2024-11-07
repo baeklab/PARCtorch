@@ -14,6 +14,8 @@ class FiniteDifference(nn.Module):
         channel_size (int): Number of input channels.
         filter_1d (np.array): 1D filter for finite difference (e.g., np.array([-1.0, 1.0])).
         padding_mode (str): Padding mode. Default value set to reproduce torchmetrics.functional.image.image_gradients.
+        device (str, optional): The device to store the filters in. Default is 'cuda'.
+        right_bottom (bool, optional): Whether to pad more to the right/bottom (True) or left/top (False). No effect if the padding is symmetric (odd-sized filters). Default is True.
     """
 
     def __init__(
@@ -22,6 +24,7 @@ class FiniteDifference(nn.Module):
         filter_1d=np.array([-1.0, 1.0]),
         padding_mode="replicate",
         device="cuda",
+        right_bottom=True,
     ):
         super(FiniteDifference, self).__init__()
 
@@ -37,11 +40,16 @@ class FiniteDifference(nn.Module):
         if self.filter_size % 2 == 1:
             pad_top = pad_bottom = (self.filter_size - 1) // 2
             pad_left = pad_right = (self.filter_size - 1) // 2
-        else:
+        elif right_bottom:
             pad_top = (self.filter_size - 1) // 2
             pad_bottom = pad_top + 1
             pad_left = (self.filter_size - 1) // 2
             pad_right = pad_left + 1
+        else:
+            pad_bottom = (self.filter_size - 1) // 2
+            pad_top = pad_bottom + 1
+            pad_right = (self.filter_size - 1) // 2
+            pad_left = pad_right + 1
 
         self.dy_pad = (0, 0, pad_top, pad_bottom)  # (left, right, top, bottom)
         self.dx_pad = (pad_left, pad_right, 0, 0)  # (left, right, top, bottom)

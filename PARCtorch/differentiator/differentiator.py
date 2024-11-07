@@ -5,7 +5,7 @@ from PARCtorch.differentiator.diffusion import Diffusion
 from PARCtorch.differentiator.mappingandrecon import MappingAndRecon
 
 
-class Differentiator(nn.Module):
+class ADRDifferentiator(nn.Module):
     def __init__(
         self,
         n_state_var,
@@ -37,7 +37,7 @@ class Differentiator(nn.Module):
         -------
         An instance of Differentiator
         """
-        super(Differentiator, self).__init__(**kwarg)
+        super(ADRDifferentiator, self).__init__(**kwarg)
         self.list_adv = nn.ModuleList()
         self.list_dif = nn.ModuleList()
         self.list_mar = nn.ModuleList()
@@ -89,7 +89,7 @@ class Differentiator(nn.Module):
                 )
             )
 
-    def forward(self, current):
+    def forward(self, t, current):
         """
         Forward of differentiator. Advection and diffusion will be calculated per channel for those necessary and combined with dynamic features.
         Those that do not have explicit advection and diffusion calculation will have zero has output. This design choice was made because of
@@ -97,6 +97,7 @@ class Differentiator(nn.Module):
 
         Parameters
         ----------
+        t: torch.tensor, float scalar for current time
         current: 4-d tensor of Float with shape (batch_size, channels, y, x), the current state and velocity variables
 
         Returns
