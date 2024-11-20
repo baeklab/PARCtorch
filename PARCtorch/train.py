@@ -1,6 +1,7 @@
 import os
 import torch
-from tqdm import tqdm  # Import tqdm for progress bar
+from tqdm import tqdm
+import pickle  # Import pickle to save the loss
 
 # Training loop with tqdm for progress bars
 def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir):
@@ -9,6 +10,8 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir)
         os.makedirs(save_dir)
 
     model = model.cuda()  # Move model to GPU
+    all_losses = []  # List to store epoch losses
+
     for epoch in range(1, num_epochs + 1):
         model.train()  # Set the model to training mode
         running_loss = 0.0
@@ -51,9 +54,16 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir)
 
         # Calculate and print average loss for the epoch
         epoch_loss = running_loss / len(train_loader)
+        all_losses.append(epoch_loss)  # Store epoch loss
         print(f"Epoch [{epoch}/{num_epochs}], Average Loss: {epoch_loss:.4f}")
 
         # Save the model weights at the end of the epoch
         model_save_path = os.path.join(save_dir, "model.pth")
         torch.save(model.state_dict(), model_save_path)
         print(f"Model weights saved at {model_save_path}")
+
+    # Save all epoch losses to a pickle file
+    loss_save_path = os.path.join(save_dir, "training_losses.pkl")
+    with open(loss_save_path, "wb") as f:
+        pickle.dump(all_losses, f)
+    print(f"Training losses saved at {loss_save_path}")
