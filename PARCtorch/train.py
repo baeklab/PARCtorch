@@ -4,7 +4,7 @@ from tqdm import tqdm
 import pickle  # Import pickle to save the loss
 
 # Training loop with tqdm for progress bars
-def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir):
+def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir, app):
     # Ensure the save directory exists
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -39,8 +39,19 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir)
             # Forward pass
             predictions = model(ic, t0, t1)
 
-            # Compute loss
-            loss = criterion(predictions[:, :, 1:, :, :], gt[:, :, 1:, :, :])
+            # Compute loss based on the 'app' parameter
+            if app == "burgers":
+                loss = criterion(predictions[:, :, 1:, :, :], gt[:, :, 1:, :, :])
+            elif app == "ns":
+                # Skip channel at index 1
+                loss = criterion(
+                    torch.cat((predictions[:, :, :1, :, :], predictions[:, :, 2:, :, :]), dim=2),
+                    torch.cat((gt[:, :, :1, :, :], gt[:, :, 2:, :, :]), dim=2)
+                )
+            elif app == "em":
+                loss = criterion(predictions[:, :, 0:, :, :], gt[:, :, 0:, :, :])
+            else:
+                raise ValueError(f"Unknown application type: {app}")
 
             # Backward pass and optimize
             loss.backward()
