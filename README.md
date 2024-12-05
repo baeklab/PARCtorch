@@ -9,7 +9,7 @@ Paper link: [arxiv](https://arxiv.org/abs/2402.12503) [ICML 2024 Proceedings](ht
 
 ## Installation
 
-Install via miniforge:
+Install via miniforge (open source version of conda):
 ```bash
 mamba create -n parc python=3.12
 mamba activate parc
