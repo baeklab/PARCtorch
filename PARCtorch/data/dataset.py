@@ -374,7 +374,7 @@ class InitialConditionDataset(Dataset):
     Each sample consists of:
         - ic: Initial condition tensor of shape (channels, height, width)
         - t0: Scalar tensor (0.0)
-        - t1: Tensor indicating future steps (defined by the user or calculated automatically)
+        - t1: Tensor indicating future steps (calculated automatically based on data)
         - target: Placeholder or can be set to None since the model will predict the entire sequence
     """
 
@@ -382,7 +382,6 @@ class InitialConditionDataset(Dataset):
         self,
         data_dirs,
         future_steps=1,
-        t1=None,
         min_max_path=None,
         required_channels=None,
         validate=True,
@@ -393,7 +392,6 @@ class InitialConditionDataset(Dataset):
         Args:
             data_dirs (list of str): List of directories containing preprocessed `.npy` files.
             future_steps (int): Number of timesteps in the future the model will predict.
-            t1 (list, optional): A list of future steps for prediction. If None, evenly spaced steps will be calculated.
             min_max_path (str, optional): Path to the JSON file containing min and max values for each channel.
                                           If None, it will look for 'min_max.json' in each data directory.
             required_channels (int, optional): Number of channels expected in the data.
@@ -487,43 +485,21 @@ class InitialConditionDataset(Dataset):
 
         self.num_channels = num_channels
 
-        # Validate that each file has at least one timestep
-        logging.info("Validating timesteps in each file...")
-        self.timesteps_per_file = []
-        for file in tqdm(self.files, desc="Validating timesteps"):
-            try:
-                data = np.load(file, mmap_mode="r")
-            except Exception as e:
-                raise ValueError(f"Error loading file '{file}': {e}")
-
-            timesteps, channels, height, width = data.shape
-            if channels != self.num_channels:
-                raise ValueError(
-                    f"File '{file}' has {channels} channels; expected {self.num_channels} channels based on min_max.json."
-                )
-            if timesteps < 1:
-                raise ValueError(
-                    f"File '{file}' has {timesteps} timesteps; requires at least 1 timestep."
-                )
-            self.timesteps_per_file.append(timesteps)
-
-        # Handle t1 logic: either use the user-defined list or generate evenly spaced steps
-        if t1 is None:
+        # Determine the total number of timesteps from a sample file
+        if len(self.files) > 0:
+            sample_memmap = np.load(self.files[0], mmap_mode="r")
+            timesteps = sample_memmap.shape[0]
+            del sample_memmap
+            whole_t = timesteps + 1  # As per original code in GenericPhysicsDataset
             self.t1 = torch.tensor(
-                [
-                    (i + 1) / self.future_steps
-                    for i in range(self.future_steps)
-                ],
+                [(i + 1) / whole_t for i in range(self.future_steps)],
                 dtype=torch.float32,
             )  # Shape: (future_steps,)
+            self.t0 = torch.tensor(0.0, dtype=torch.float32)  # Scalar
         else:
-            if len(t1) != future_steps:
-                raise ValueError(
-                    f"Length of 't1' ({len(t1)}) must match 'future_steps' ({future_steps})."
-                )
-            self.t1 = torch.tensor(t1, dtype=torch.float32)  # User-defined t1
-
-        self.t0 = torch.tensor(0.0, dtype=torch.float32)  # Scalar
+            raise ValueError(
+                "No valid .npy files found in the specified directories."
+            )
 
         # Initialize a cache for memory-mapped files to improve performance
         self._memmap_cache = {}
@@ -561,10 +537,11 @@ class InitialConditionDataset(Dataset):
             idx (int): Index of the sample to retrieve.
 
         Returns:
-            tuple: (ic, t0, t1)
+            tuple: (ic, t0, t1, target)
                 - ic: Initial condition tensor of shape (channels, height, width)
                 - t0: Scalar tensor (0.0)
                 - t1: Tensor of shape (future_steps,)
+                - target: None (since target is not used)
         """
         file = self.files[idx]
 
@@ -605,7 +582,6 @@ class InitialConditionDataset(Dataset):
             self.t1,
             None,
         )  # Target is None since the model will predict it
-
 
 def initial_condition_collate_fn(batch):
     """
