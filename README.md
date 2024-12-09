@@ -7,6 +7,17 @@ Physics-aware Recurrent Convolutional Neural Networks (PARCv2) in PyTorch
 
 Paper link: [arxiv](https://arxiv.org/abs/2402.12503) [ICML 2024 Proceedings](https://proceedings.mlr.press/v235/nguyen24c.html)
 
+## Installation
+
+Install via miniforge (open source version of conda):
+```bash
+mamba create -n parc python=3.12
+mamba activate parc
+mamba install pytorch pytorch-cuda=12.4 -c pytorch -c nvidia
+mamba install numpy matplotlib tqdm ipykernel imageio
+pip install -e .
+```
+
 ### Highlight
 
 
