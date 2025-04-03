@@ -14,34 +14,70 @@ class UNetDownBlock(nn.Module):
     Args:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels after convolution.
-        kernel_size (int, optional): Size of the convolutional kernels. Default is 3.
-        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'zeros'.
+        kernel_size (int): Size of the convolutional kernels.
+        normalization (nn.Module or None): Normalization layer.
+        normalization_args (dict): Args for normalization layer.
+        activation (nn.Module): Activation function.
+        activation_args (dict): Args for activation function.
+        padding_mode (str): Padding mode for convolutional layers.
     """
 
     def __init__(
-        self, in_channels, out_channels, kernel_size=3, padding_mode="zeros"
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        normalization,
+        normalization_args,
+        activation,
+        activation_args,
+        padding_mode,
     ):
         super(UNetDownBlock, self).__init__()
         self.padding_mode = padding_mode
 
-        self.doubleConv = nn.Sequential(
-            nn.Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=kernel_size,
-                padding=kernel_size // 2,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(
-                out_channels,
-                out_channels,
-                kernel_size=1,
-                padding=0,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-        )
+        if normalization is None:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+            ]
+        else:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                normalization(out_channels, **normalization_args),
+                activation(**activation_args),
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                normalization(out_channels, **normalization_args),
+                activation(**activation_args),
+            ]
+
+        self.doubleConv = nn.Sequential(*doubleconv_modules)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
@@ -61,20 +97,28 @@ class UNetUpBlock(nn.Module):
     Args:
         in_channels (int): Number of input channels from the previous layer.
         out_channels (int): Number of output channels after convolution.
-        skip_channels (int, optional): Number of channels from the skip connection. Default is 0.
-        kernel_size (int, optional): Size of the convolutional kernels. Default is 3.
-        padding_mode (str, optional): Padding mode for convolutional layers. Default is 'zeros'.
-        use_concat (bool, optional): Whether to concatenate skip connections. Default is True.
+        skip_channels (int): Number of channels from the skip connection.
+        kernel_size (int): Size of the convolutional kernels.
+        normalization (nn.Module or None): Normalization layer.
+        normalization_args (dict): Args for normalization layer.
+        activation (nn.Module): Activation function.
+        activation_args (dict): Args for activation function.
+        padding_mode (str): Padding mode for convolutional layers.
+        use_concat (bool): Whether to concatenate skip connections.
     """
 
     def __init__(
         self,
         in_channels,
         out_channels,
-        skip_channels=0,
-        kernel_size=3,
-        padding_mode="zeros",
-        use_concat=True,
+        skip_channels,
+        kernel_size,
+        normalization,
+        normalization_args,
+        activation,
+        activation_args,
+        padding_mode,
+        use_concat,
     ):
         super(UNetUpBlock, self).__init__()
         self.padding_mode = padding_mode
@@ -91,24 +135,48 @@ class UNetUpBlock(nn.Module):
             conv_in_channels = in_channels
 
         # Define the double convolution layers with LeakyReLU activations
-        self.doubleConv = nn.Sequential(
-            nn.Conv2d(
-                conv_in_channels,
-                out_channels,
-                kernel_size=kernel_size,
-                padding=kernel_size // 2,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(
-                out_channels,
-                out_channels,
-                kernel_size=1,
-                padding=0,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-        )
+        if normalization is None:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    conv_in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+            ]
+        else:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    conv_in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                normalization(out_channels, **normalization_args),
+                activation(**activation_args),
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                normalization(out_channels, **normalization_args),
+                activation(**activation_args),
+            ]
+
+        self.doubleConv = nn.Sequential(*doubleconv_modules)
 
     def forward(self, x, skip_connection: Optional[torch.Tensor]):
         # Apply transposed convolution to upsample
@@ -133,6 +201,10 @@ class UNet(nn.Module):
         block_dimensions (list of int): List of feature dimensions for each block.
         output_channels (int): Number of output channels of the final layer.
         kernel_size (int, optional): Size of the convolutional kernels. Default is 3.
+        normalization (nn.Module or None, optional): Normalization layer. Default is None.
+        normalization_args (dict, optional): Args for normalization layer. Default is an empty dictionary.
+        activation (nn.Module, optional): Activation function. Default is nn.LeakyReLU.
+        activation_args (dict, optional): Args for activation function. Default is {"negative_slope": 0.2}.
         padding_mode (str, optional): Padding mode for convolutional layers. Default is 'zeros'.
         up_block_use_concat (list of bool, optional): Flags indicating whether to concatenate skip connections in each up block.
         skip_connection_indices (list of int, optional): Indices of skip connections to use in the upsampling path.
@@ -144,6 +216,10 @@ class UNet(nn.Module):
         input_channels,
         output_channels,
         kernel_size=3,
+        normalization=None,
+        normalization_args={},
+        activation=nn.LeakyReLU,
+        activation_args={"negative_slope": 0.2},
         padding_mode="zeros",
         up_block_use_concat=None,
         skip_connection_indices=None,
@@ -156,24 +232,48 @@ class UNet(nn.Module):
         self.skip_connection_indices = skip_connection_indices
 
         # Initial double convolution layer with LeakyReLU activations
-        self.doubleConv = nn.Sequential(
-            nn.Conv2d(
-                input_channels,
-                block_dimensions[0],
-                kernel_size=kernel_size,
-                padding=kernel_size // 2,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(
-                block_dimensions[0],
-                block_dimensions[0],
-                kernel_size=1,
-                padding=0,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-        )
+        if normalization is None:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    input_channels,
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+                nn.Conv2d(
+                    block_dimensions[0],
+                    block_dimensions[0],
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+            ]
+        else:
+            doubleconv_modules = [
+                nn.Conv2d(
+                    input_channels,
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2,
+                    padding_mode=padding_mode,
+                ),
+                normalization(block_dimensions[0], **normalization_args),
+                activation(**activation_args),
+                nn.Conv2d(
+                    block_dimensions[0],
+                    block_dimensions[0],
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                normalization(block_dimensions[0], **normalization_args),
+                activation(**activation_args),
+            ]
+
+        self.doubleConv = nn.Sequential(*doubleconv_modules)
 
         # Downsampling path
         self.downBlocks = nn.ModuleList()  # List to hold downsampling blocks
@@ -185,7 +285,14 @@ class UNet(nn.Module):
         # Construct the downsampling blocks
         for out_channels in block_dimensions[1:]:
             down_block = UNetDownBlock(
-                in_channels, out_channels, kernel_size, padding_mode
+                in_channels,
+                out_channels,
+                kernel_size,
+                normalization,
+                normalization_args,
+                activation,
+                activation_args,
+                padding_mode,
             )
             self.downBlocks.append(down_block)
             in_channels = out_channels
@@ -228,6 +335,10 @@ class UNet(nn.Module):
                 out_channels,
                 skip_channels,
                 kernel_size,
+                normalization,
+                normalization_args,
+                activation,
+                activation_args,
                 padding_mode,
                 use_concat,
             )
@@ -236,24 +347,47 @@ class UNet(nn.Module):
             in_channels = out_channels
 
         # Final convolution to map to the desired number of output channels
-        self.finalConv = nn.Sequential(
-            nn.Conv2d(
-                output_channels,
-                output_channels,
-                kernel_size=1,
-                padding=0,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(
-                output_channels,
-                output_channels,
-                kernel_size=1,
-                padding=0,
-                padding_mode=padding_mode,
-            ),
-            nn.LeakyReLU(negative_slope=0.2),
-        )
+        if normalization is None:
+            finalconv_modules = [
+                nn.Conv2d(
+                    output_channels,
+                    output_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+                nn.Conv2d(
+                    output_channels,
+                    output_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                activation(**activation_args),
+            ]
+        else:
+            finalconv_modules = [
+                nn.Conv2d(
+                    output_channels,
+                    output_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                normalization(output_channels, **normalization_args),
+                activation(**activation_args),
+                nn.Conv2d(
+                    output_channels,
+                    output_channels,
+                    kernel_size=1,
+                    padding=0,
+                    padding_mode=padding_mode,
+                ),
+                normalization(output_channels, **normalization_args),
+                activation(**activation_args),
+            ]
+        self.finalConv = nn.Sequential(*finalconv_modules)
 
     def forward(self, x):
         x = self.doubleConv(x)
