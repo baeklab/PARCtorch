@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PARCtorch"
-version = "0.3.0"
+version = "0.4.0"
 authors = [
   { name="Xinlun Cheng", email="xc7ts@virginia.edu" },
   { name="Jack Beerman", email="jtb3sud@virginia.edu" },
