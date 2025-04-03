@@ -273,7 +273,7 @@ class ResNetRegressor(nn.Module):
             normalization,
             normalization_args,
             activation,
-            activation_args
+            activation_args,
             padding_mode,
         )
         self.final_conv = nn.Conv2d(block_dimensions[-1], out_channels, 1)
