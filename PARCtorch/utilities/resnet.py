@@ -42,21 +42,45 @@ class ResNetBlock(nn.Module):
 
         if normalization is None:
             conv1_modules = [
-                nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
-                activation()
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
+                activation(),
             ]
             conv2_modules = [
-                nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
             ]
         else:
             conv1_modules = [
-                nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
                 normalization(out_channels, **normalization_args),
-                activation()
+                activation(),
             ]
             conv2_modules = [
-                nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
-                normalization(out_channels, **normalization_args)
+                nn.Conv2d(
+                    out_channels,
+                    out_channels,
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
+                normalization(out_channels, **normalization_args),
             ]
 
         self.conv1 = nn.Sequential(*conv1_modules)
@@ -64,7 +88,9 @@ class ResNetBlock(nn.Module):
 
         # Skip connection
         if in_channels != out_channels:
-            self.skip_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+            self.skip_conv = nn.Conv2d(
+                in_channels, out_channels, kernel_size=1
+            )
         else:
             self.skip_conv = nn.Identity()
         # Final activation after addition
@@ -131,23 +157,47 @@ class ResNet(nn.Module):
         # Double convolution + ReLU
         if normalization is None:
             conv1_modules = [
-                nn.Conv2d(in_channels, block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    in_channels,
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
                 activation(),
             ]
             conv2_modules = [
-                nn.Conv2d(block_dimensions[0], block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    block_dimensions[0],
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
                 activation(),
             ]
         else:
             conv1_modules = [
-                nn.Conv2d(in_channels, block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    in_channels,
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
                 normalization(block_dimensions[0], **normalization_args),
-                activation()
+                activation(),
             ]
             conv2_modules = [
-                nn.Conv2d(block_dimensions[0], block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                nn.Conv2d(
+                    block_dimensions[0],
+                    block_dimensions[0],
+                    kernel_size=kernel_size,
+                    padding=0,
+                    padding_mode="zeros",
+                ),
                 normalization(block_dimensions[0], **normalization_args),
-                activation()
+                activation(),
             ]
         self.conv1 = nn.Sequential(*conv1_modules)
         self.conv2 = nn.Sequential(*conv2_modules)
@@ -193,12 +243,32 @@ class ResNet(nn.Module):
 
 
 class ResNetRegressor(nn.Module):
-    '''
+    """
     ResNet + 1x1 convolution for regression purposes.
-    '''
-    def __init__(self, in_channels, block_dimensions, kernel_size, out_channels, normalization, normalization_args, activation, padding_mode):
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        block_dimensions,
+        kernel_size,
+        out_channels,
+        normalization,
+        normalization_args,
+        activation,
+        padding_mode,
+    ):
         super().__init__()
-        self.resnet = ResNet(in_channels, block_dimensions, kernel_size, False, normalization, normalization_args, activation, padding_mode)
+        self.resnet = ResNet(
+            in_channels,
+            block_dimensions,
+            kernel_size,
+            False,
+            normalization,
+            normalization_args,
+            activation,
+            padding_mode,
+        )
         self.final_conv = nn.Conv2d(block_dimensions[-1], out_channels, 1)
 
     def forward(self, x):

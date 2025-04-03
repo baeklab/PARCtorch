@@ -490,7 +490,9 @@ class InitialConditionDataset(Dataset):
             sample_memmap = np.load(self.files[0], mmap_mode="r")
             timesteps = sample_memmap.shape[0]
             del sample_memmap
-            whole_t = timesteps + 1  # As per original code in GenericPhysicsDataset
+            whole_t = (
+                timesteps + 1
+            )  # As per original code in GenericPhysicsDataset
             self.t1 = torch.tensor(
                 [(i + 1) / whole_t for i in range(self.future_steps)],
                 dtype=torch.float32,
@@ -582,6 +584,7 @@ class InitialConditionDataset(Dataset):
             self.t1,
             None,
         )  # Target is None since the model will predict it
+
 
 def initial_condition_collate_fn(batch):
     """

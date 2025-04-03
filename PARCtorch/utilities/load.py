@@ -31,5 +31,3 @@ def load_model_weights(model, weights_path, device):
     model.eval()
 
     return model
-
-
