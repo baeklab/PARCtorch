@@ -18,6 +18,9 @@ class ResNetBlock(nn.Module):
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
         kernel_size (int): Size of the convolutional kernel.
+        normalization (nn.Module or None): Normalization
+        normalization_args (dict): args to pass to normalization during initialization
+        activation (nn.Module): Activation function
         padding_mode (str): Padding mode for convolutional layers.
     """
 
@@ -26,6 +29,9 @@ class ResNetBlock(nn.Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
+        normalization: nn.Module,
+        normalization_args: dict,
+        activation: nn.Module,
         padding_mode: str,
     ):
         super(ResNetBlock, self).__init__()
@@ -34,36 +40,35 @@ class ResNetBlock(nn.Module):
         self.out_channels = out_channels
         self.pad_size = (kernel_size - 1) // 2
 
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=kernel_size,
-                padding=0,
-                padding_mode="zeros",
-            ),
-            nn.ReLU(),
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(
-                out_channels,
-                out_channels,
-                kernel_size=kernel_size,
-                padding=0,
-                padding_mode="zeros",
-            ),
-            nn.ReLU(),
-        )
+        if normalization is None:
+            conv1_modules = [
+                nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                activation()
+            ]
+            conv2_modules = [
+                nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+            ]
+        else:
+            conv1_modules = [
+                nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                normalization(out_channels, **normalization_args),
+                activation()
+            ]
+            conv2_modules = [
+                nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                normalization(out_channels, **normalization_args)
+            ]
+
+        self.conv1 = nn.Sequential(*conv1_modules)
+        self.conv2 = nn.Sequential(*conv2_modules)
 
         # Skip connection
         if in_channels != out_channels:
-            self.skip_conv = nn.Conv2d(
-                in_channels, out_channels, kernel_size=1
-            )
+            self.skip_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         else:
             self.skip_conv = nn.Identity()
         # Final activation after addition
-        self.relu2 = nn.ReLU()
+        self.relu2 = activation()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.pad(
@@ -91,13 +96,18 @@ class ResNet(nn.Module):
 
     The model initializes with a convolutional layer and iteratively adds residual blocks
     based on the provided `block_dimensions`. Optionally, it applies max pooling after
-    each residual block to reduce spatial dimensions.
+    each residual block to reduce spatial dimensions. Model outputs pass through an activation
+    funtion at the end, so do not use for regression purposes without attaching an extra
+    convolution layer.
 
     Args:
         in_channels (int): Number of input channels.
         block_dimensions (List[int]): List specifying the number of feature channels for each residual block.
         kernel_size (int, optional): Size of the convolutional kernel. Default is 3.
         pooling (bool, optional): Whether to apply max pooling after each residual block. Default is False.
+        normalization (nn.Module or None): Normalization
+        normalization_args (dict): args to pass to normalization during initialization
+        activation (nn.Module): Activation function
         padding_mode (str, optional): Padding mode for convolutional layers. Default is 'constant'.
     """
 
@@ -107,6 +117,9 @@ class ResNet(nn.Module):
         block_dimensions: List[int],
         kernel_size: int = 3,
         pooling: bool = False,
+        normalization: nn.Module = None,
+        normalization_args: dict = None,
+        activation: nn.Module = nn.ReLU,
         padding_mode: str = "constant",
     ):
         super(ResNet, self).__init__()
@@ -116,26 +129,28 @@ class ResNet(nn.Module):
         self.pad_size = (kernel_size - 1) // 2
 
         # Double convolution + ReLU
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(
-                in_channels,
-                block_dimensions[0],
-                kernel_size=kernel_size,
-                padding=0,
-                padding_mode="zeros",
-            ),
-            nn.ReLU(),
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(
-                block_dimensions[0],
-                block_dimensions[0],
-                kernel_size=kernel_size,
-                padding=0,
-                padding_mode="zeros",
-            ),
-            nn.ReLU(),
-        )
+        if normalization is None:
+            conv1_modules = [
+                nn.Conv2d(in_channels, block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                activation(),
+            ]
+            conv2_modules = [
+                nn.Conv2d(block_dimensions[0], block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                activation(),
+            ]
+        else:
+            conv1_modules = [
+                nn.Conv2d(in_channels, block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                normalization(block_dimensions[0], **normalization_args),
+                activation()
+            ]
+            conv2_modules = [
+                nn.Conv2d(block_dimensions[0], block_dimensions[0], kernel_size=kernel_size, padding=0, padding_mode="zeros"),
+                normalization(block_dimensions[0], **normalization_args),
+                activation()
+            ]
+        self.conv1 = nn.Sequential(*conv1_modules)
+        self.conv2 = nn.Sequential(*conv2_modules)
         module_list = []
         # The blocks
         for i in range(len(block_dimensions)):
@@ -147,6 +162,9 @@ class ResNet(nn.Module):
                 in_channels=in_channels,
                 out_channels=block_dimensions[i],
                 kernel_size=kernel_size,
+                normalization=normalization,
+                normalization_args=normalization_args,
+                activation=activation,
                 padding_mode=padding_mode,
             )
             module_list.append(res_block)
@@ -172,3 +190,16 @@ class ResNet(nn.Module):
         out = self.conv2(out)
         out = self.path(out)
         return out
+
+
+class ResNetRegressor(nn.Module):
+    '''
+    ResNet + 1x1 convolution for regression purposes.
+    '''
+    def __init__(self, in_channels, block_dimensions, kernel_size, out_channels, normalization, normalization_args, activation, padding_mode):
+        super().__init__()
+        self.resnet = ResNet(in_channels, block_dimensions, kernel_size, False, normalization, normalization_args, activation, padding_mode)
+        self.final_conv = nn.Conv2d(block_dimensions[-1], out_channels, 1)
+
+    def forward(self, x):
+        return self.final_conv(self.resnet(x))
