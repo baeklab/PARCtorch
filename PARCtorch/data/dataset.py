@@ -6,6 +6,12 @@ from torch.utils.data import Dataset
 import logging
 from tqdm import tqdm
 
+# TODO: Wipe out this entire file. Instead, implement the following classes:
+# class Dataset(torch.utils.data.Dataset):
+# class RegularMeshDataset(Dataset):
+# class IrregularMeshDataset(Dataset):
+
+
 
 def validate_data_format(
     data_dirs, future_steps=1, min_max_path=None, required_channels=None
