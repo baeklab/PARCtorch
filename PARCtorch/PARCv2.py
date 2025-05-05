@@ -1,8 +1,15 @@
 import torch.nn as nn
+import torch 
 
+from PARCtorch.utilities.unet import UNet 
+from PARCtorch.differentiator.finitedifference import FiniteDifference
+from differentiator.differentiator import ADRDifferentiator
+from integrator.rk4 import RK4 
+from integrator.integrator import Integrator
+from model import PARC
 
-class PARCv2(nn.Module):
-    def __init__(self, differentiator, integrator, loss, **kwargs):
+class PARCv2(PARC):
+    def __init__(self, differentiator=None, integrator=None, loss=None, **kwargs):
         """
         Constructor of PARCv2.
 
@@ -17,32 +24,32 @@ class PARCv2(nn.Module):
         -------
         An instance of PARCv2
         """
-        super(PARCv2, self).__init__(**kwargs)
+        right_diff = FiniteDifference(padding_mode='replicate').cuda()
+        if differentiator is None:
+            unet = UNet(
+                [64, 64*2, 64*4, 64*8, 64*16], 
+                5, 
+                128, 
+                up_block_use_concat=[False, True, False, True], 
+                skip_connection_indices=[2,0])
+            differentiator = ADRDifferentiator(3, 128, [0, 1, 2, 3, 4], [0], unet, "constant", right_diff, spade_random_noise=False).cuda()
 
-        self.differentiator = differentiator
-        self.integrator = integrator
-        self.loss = loss
+        if integrator is None: 
+            rk4 = RK4().cuda()
+            print( rk4 )
+            print( right_diff )
+            integrator = Integrator(True, [], rk4, [None]*5, "constant", right_diff).cuda()
 
-    def freeze_differentiator(self):
-        """
-        A convenient function to freeze the differentiator
+        if loss is None: 
+            loss = torch.nn.L1Loss().cuda()
+        super(PARCv2, self).__init__(differentiator, integrator, loss, **kwargs)
 
-        Args
-        """
-        for parameter in self.differentiator.parameters():
-            parameter.requires_grad = False
-        self.differentiator.eval()
+        # print( self.differentiator, self.integrator, self.loss )
+        print( type(self.differentiator ), type(self.integrator), type(self.loss) )
 
-    def forward(self, ic, t0, t1):
-        """
-        Forward of PARCv2. Essentially a call to the integrator with the differentiator.
+    def check(self):
+        diff = True if isinstance(self.differentiator, ADRDifferentiator) else False 
+        intg = True if isinstance(self.integrator.numerical_integrator, RK4) else False 
+        loss = True if isinstance(self.loss, torch.nn.L1Loss) else False 
+        return (diff and intg and loss)
 
-        Args
-        ic (torch.tensor): 4-d tensor of Float with shape (batch_size, channels, y, x), initial condition.
-        t0 (float): starting time of the initial condition
-        t1 (torch.tensor): 1-d tensor of Float with shape (ts), time point that PARCv2 will predict on
-
-        Returns
-        res (torch.tensor): 5-d tnsor of Float with the shape of (ts, batch_size, channels, y, x), predicted sequences at each time point in t1
-        """
-        return self.integrator(self.differentiator, ic, t0, t1)
