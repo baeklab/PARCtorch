@@ -63,10 +63,10 @@ def test_dataset_thewell_trl2d():
     assert len(ds) == 6768
     for each in ds:
         ic, t0, t1, gt = each
-        assert is_same_shape([5, 128, 384], ic.shape)
+        assert is_same_shape([5, 384, 128], ic.shape)  # t_cool, density, pressure, vx, vy
         assert is_same_shape([], t0.shape)
         assert is_same_shape([future_steps], t1.shape)
-        assert is_same_shape([future_steps, 5, 128, 384], gt.shape)
+        assert is_same_shape([future_steps, 5, 384, 128], gt.shape)
         # First channel is the constant, t_cool
         assert (ic[0, :, :] == ic[0, 0, 0]).all()
         assert (gt[:, 0, :, :] == ic[0, 0, 0]).all()
@@ -93,7 +93,7 @@ def test_dataset_thewell_gsrd():
     assert len(ds) == 954240
     for each in ds:
         ic, t0, t1, gt = each
-        assert is_same_shape([6, 128, 128], ic.shape)
+        assert is_same_shape([6, 128, 128], ic.shape)  # f, k, A, B, vx==0, vy==0
         assert is_same_shape([], t0.shape)
         assert is_same_shape([future_steps], t1.shape)
         assert is_same_shape([future_steps, 6, 128, 128], gt.shape)
