@@ -19,12 +19,12 @@ class PARC(ABC, nn.Module):
         An instance of PARC model
         """
         super(PARC, self).__init__(**kwargs)
-        print( 'superclass reached')
+        print("superclass reached")
         self.differentiator = differentiator
         self.integrator = integrator
         self.loss = loss
         check = self.check()
-        print( check ) 
+        print(check)
         self.check_msg(check)
 
     def freeze_differentiator(self):
@@ -50,21 +50,23 @@ class PARC(ABC, nn.Module):
         res (torch.tensor): 5-d tnsor of Float with the shape of (ts, batch_size, channels, y, x), predicted sequences at each time point in t1
         """
         return self.integrator(self.differentiator, ic, t0, t1)
-    
+
     def check_msg(self, check):
-        if check == -1: 
-            print( f"WARNING: parameter configuration does not match with the manuscript and performance may vary." )
-        elif check == 1: 
-            print( f"parameter configuration match with the manuscript." )
-        else: 
+        if check == -1:
+            print(
+                f"WARNING: parameter configuration does not match with the manuscript and performance may vary."
+            )
+        elif check == 1:
+            print(f"parameter configuration match with the manuscript.")
+        else:
             raise ValueError(f"{check} is not supported. please report to GitHub issue")
-    
+
     @abstractmethod
     def check(self):
-        """ 
-        checks if the configuration setup matches with the manuscript 
+        """
+        checks if the configuration setup matches with the manuscript
 
         Returns
-        check (int): 1 if configuration match the correct usage of the differentiator, integrator, and loss. -1 if not 1 and 0. 
+        check (int): 1 if configuration match the correct usage of the differentiator, integrator, and loss. -1 if not 1 and 0.
         """
         pass

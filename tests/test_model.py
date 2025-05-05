@@ -1,19 +1,22 @@
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 
 from PARCtorch.PARCv2 import PARCv2
-import torch 
+import torch
 
-def test_model(model=PARCv2()): 
+
+def test_model(model=PARCv2()):
     assert model.differentiator is not None
     assert model.integrator is not None
     assert model.loss is not None
 
+
 def test_PARCv2():
     model = PARCv2()
-    
+
     # model initialization
-    test_model(model) 
+    test_model(model)
 
     # check function
     assert model.check() == 1, f"ERROR: default manuscript configuration"
