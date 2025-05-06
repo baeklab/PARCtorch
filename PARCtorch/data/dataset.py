@@ -630,14 +630,14 @@ class WellDatasetInterface(GenericPhysicsDataset):
         min_val,
         max_val,
         delta_t,
-        add_constant_sclars,
+        add_constant_scalars,
         well_dataset_args,
     ):
         self.future_steps = future_steps
         self.min_val = min_val
         self.max_val = max_val
         self.delta_t = delta_t
-        self.add_constant_scalars = add_constant_sclars
+        self.add_constant_scalars = add_constant_scalars
         # Initialize a cache for memory-mapped files to improve performance
         self._memmap_cache = {}
         self.t0 = torch.tensor(0.0, dtype=torch.float32)
@@ -672,12 +672,11 @@ class WellDatasetInterface(GenericPhysicsDataset):
 
 
         # Handle constant scalars if they exist
-        if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0:
+        if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0 and self.add_constant_scalars:
             const_vals = sample["constant_scalars"]  # [num_constants]
             const_channels = [torch.full((H, W), val.item()) for val in const_vals]
             const_stack = torch.stack(const_channels, dim=0)  # [C0, H, W]
-        else:
-            const_stack = torch.empty((0, H, W))  # No constant scalars
+
 
         # Final input condition: [C0 + C1, H, W]
         ic = torch.cat([const_stack, input_fields], dim=0)
