@@ -2,5 +2,4 @@ torch>=2.0.0
 numpy
 matplotlib
 tqdm
-python>=3.9
 the_well
