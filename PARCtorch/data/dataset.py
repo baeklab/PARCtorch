@@ -638,8 +638,6 @@ class WellDatasetInterface(GenericPhysicsDataset):
         self.max_val = max_val
         self.delta_t = delta_t
         self.add_constant_scalars = add_constant_scalars
-        # Initialize a cache for memory-mapped files to improve performance
-        self._memmap_cache = {}
         self.t0 = torch.tensor(0.0, dtype=torch.float32)
         self.t1 = torch.tensor(
             [(i + 1) * delta_t for i in range(future_steps)], dtype=torch.float32
