@@ -50,28 +50,57 @@ def test_dataset_thewell_trl2d():
         delta_t=0.01,
         add_constant_sclars=True,
         well_dataset_args={
-            "path": "external_data/the_well/datasets/turbulent_radiative_layer",
+            "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
+            "well_dataset_name": "turbulent_radiative_layer_2D",
+            "well_split_name": "train",
             "use_normalization": False,
         },
     )
-
     assert type(ds.well_dataset) is WellDataset
     assert torch.is_tensor(ds.min_val)
     assert torch.is_tensor(ds.max_val)
     assert type(ds.add_constant_scalars) is bool
-    assert len(ds) == 752
+    assert len(ds) == 6768
     for each in ds:
         ic, t0, t1, gt = each
-        print(ic.shape)
-        assert is_same_shape([5, 384, 128], ic.shape), "ic has incorrect shape"  # t_cool, density, pressure, vx, vy
-        assert is_same_shape([], t0.shape), "t0 has incorrect shape"
-        assert is_same_shape([future_steps], t1.shape), "[future_steps] has incorrect shape"
-        print(gt.shape)
-        assert is_same_shape([future_steps, 5, 384, 128], gt.shape), "gt.shape is not matching"
+        assert is_same_shape([5, 384, 128], ic.shape)  # t_cool, density, pressure, vx, vy
+        assert is_same_shape([], t0.shape)
+        assert is_same_shape([future_steps], t1.shape)
+        assert is_same_shape([future_steps, 5, 384, 128], gt.shape)
         # First channel is the constant, t_cool
         assert (ic[0, :, :] == ic[0, 0, 0]).all()
         assert (gt[:, 0, :, :] == ic[0, 0, 0]).all()
 
+
+def test_dataset_thewell_trl2d_noconstant():
+    """
+    Test WellDataset on turbulent_radiative_layer_2d
+    """
+    future_steps = 7
+    ds = WellDatasetInterface(
+        future_steps=future_steps,
+        min_val=torch.tensor([0.3217, 0.0541, 0.0, 0.0]),
+        max_val=torch.tensor([196.3853, 2.2342, 1.5395, 1.5395]),
+        delta_t=0.01,
+        add_constant_sclars=False,
+        well_dataset_args={
+            "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
+            "well_dataset_name": "turbulent_radiative_layer_2D",
+            "well_split_name": "train",
+            "use_normalization": False,
+        },
+    )
+    assert type(ds.well_dataset) is WellDataset
+    assert torch.is_tensor(ds.min_val)
+    assert torch.is_tensor(ds.max_val)
+    assert type(ds.add_constant_scalars) is bool
+    assert len(ds) == 6768
+    for each in ds:
+        ic, t0, t1, gt = each
+        assert is_same_shape([4, 384, 128], ic.shape)  # density, pressure, vx, vy
+        assert is_same_shape([], t0.shape)
+        assert is_same_shape([future_steps], t1.shape)
+        assert is_same_shape([future_steps, 4, 384, 128], gt.shape)
 
 
 def test_dataset_thewell_gsrd():
@@ -86,21 +115,19 @@ def test_dataset_thewell_gsrd():
         delta_t=1.0,
         add_constant_sclars=True,
         well_dataset_args={
-            #"well_base_path":"hf://datasets/polymathic-ai/",  # access from HF hub  
-            #"well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
-            "path": "external_data/the_well/datasets/gray_scott",
-            #"well_dataset_name": "gray_scott_reaction_diffusion",
-            #"well_split_name": "train",
+            "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
+            "well_dataset_name": "gray_scott_reaction_diffusion",
+            "well_split_name": "train",
             "use_normalization": False,
         },
     )
-    assert len(ds) == 19880
+    assert len(ds) == 954240
     for each in ds:
         ic, t0, t1, gt = each
-        assert is_same_shape([6, 128, 128], ic.shape) 
-        assert is_same_shape([], t0.shape), "t0 has incorrect shape"
-        assert is_same_shape([future_steps], t1.shape), "t1 shape is incorrect"
-        assert is_same_shape([future_steps, 6, 128, 128], gt.shape), "gt shape is not matching"
+        assert is_same_shape([6, 128, 128], ic.shape)  # f, k, A, B, vx==0, vy==0
+        assert is_same_shape([], t0.shape)
+        assert is_same_shape([future_steps], t1.shape)
+        assert is_same_shape([future_steps, 6, 128, 128], gt.shape)
         # First and second channels are the constants,
         assert (ic[0, :, :] == ic[0, 0, 0]).all()
         assert (ic[1, :, :] == ic[1, 0, 0]).all()
