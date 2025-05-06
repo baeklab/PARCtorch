@@ -98,11 +98,9 @@ def test_dataset_thewell_gsrd():
     assert ds.well_dataset.field_names == 0
     for each in ds:
         ic, t0, t1, gt = each
-        print(ic.shape)
-        #assert is_same_shape([6, 128, 128], ic.shape) 
+        assert is_same_shape([6, 128, 128], ic.shape) 
         assert is_same_shape([], t0.shape), "t0 has incorrect shape"
         assert is_same_shape([future_steps], t1.shape), "t1 shape is incorrect"
-        print(gt.shape)
         assert is_same_shape([future_steps, 6, 128, 128], gt.shape), "gt shape is not matching"
         # First and second channels are the constants,
         assert (ic[0, :, :] == ic[0, 0, 0]).all()
