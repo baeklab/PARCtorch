@@ -54,7 +54,7 @@ def test_dataset_thewell_trl2d():
             "use_normalization": False,
         },
     )
-    assert ds.well_dataset.field_names == 0
+
     assert type(ds.well_dataset) is WellDataset
     assert torch.is_tensor(ds.min_val)
     assert torch.is_tensor(ds.max_val)
@@ -95,7 +95,6 @@ def test_dataset_thewell_gsrd():
         },
     )
     assert len(ds) == 19880
-    assert ds.well_dataset.field_names == 0
     for each in ds:
         ic, t0, t1, gt = each
         assert is_same_shape([6, 128, 128], ic.shape) 
