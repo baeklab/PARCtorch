@@ -48,7 +48,7 @@ def test_dataset_thewell_trl2d():
         min_val=torch.tensor([0.03, 0.3217, 0.0541, 0.0, 0.0]),
         max_val=torch.tensor([3.16, 196.3853, 2.2342, 1.5395, 1.5395]),
         delta_t=0.01,
-        add_constant_sclars=True,
+        add_constant_scalars=True,
         well_dataset_args={
             "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
             "well_dataset_name": "turbulent_radiative_layer_2D",
@@ -82,7 +82,7 @@ def test_dataset_thewell_trl2d_noconstant():
         min_val=torch.tensor([0.3217, 0.0541, 0.0, 0.0]),
         max_val=torch.tensor([196.3853, 2.2342, 1.5395, 1.5395]),
         delta_t=0.01,
-        add_constant_sclars=False,
+        add_constant_scalars=False,
         well_dataset_args={
             "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
             "well_dataset_name": "turbulent_radiative_layer_2D",
@@ -113,7 +113,7 @@ def test_dataset_thewell_gsrd():
         min_val=torch.tensor([0.0] * 6),
         max_val=torch.tensor([1.0] * 6),
         delta_t=1.0,
-        add_constant_sclars=True,
+        add_constant_scalars=True,
         well_dataset_args={
             "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
             "well_dataset_name": "gray_scott_reaction_diffusion",
