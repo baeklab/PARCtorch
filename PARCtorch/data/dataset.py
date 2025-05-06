@@ -676,15 +676,25 @@ class WellDatasetInterface(GenericPhysicsDataset):
             const_vals = sample["constant_scalars"]  # [num_constants]
             const_channels = [torch.full((H, W), val.item()) for val in const_vals]
             const_stack = torch.stack(const_channels, dim=0)  # [C0, H, W]
-
+            include_const = True
+        else:
+            include_const = False  # No constant scalars added
 
         # Final input condition: [C0 + C1, H, W]
-        ic = torch.cat([const_stack, input_fields], dim=0)
+        if include_const:
+            ic = torch.cat([const_stack, input_fields], dim=0)
+        else:
+            ic = input_fields
 
         # Final ground truth: [T, C0 + C1, H, W]
-        gt = torch.cat([
-            torch.cat([const_stack, output_fields[t]], dim=0).unsqueeze(0)
-            for t in range(output_fields.shape[0])
-        ], dim=0)
+        gt_list = []
+        for t in range(output_fields.shape[0]):
+            if include_const:
+                gt_t = torch.cat([const_stack, output_fields[t]], dim=0)
+            else:
+                gt_t = output_fields[t]
+            gt_list.append(gt_t.unsqueeze(0))  # [1, C, H, W]
+
+        gt = torch.cat(gt_list, dim=0)  # [T, C, H, W]
 
         return ic, self.t0, self.t1, gt
