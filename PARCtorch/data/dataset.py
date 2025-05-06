@@ -638,6 +638,8 @@ class WellDatasetInterface(GenericPhysicsDataset):
         self.max_val = max_val
         self.delta_t = delta_t
         self.add_constant_scalars = add_constant_scalars
+        # Initialize a cache for memory-mapped files to improve performance
+        #self._memmap_cache = {}
         self.t0 = torch.tensor(0.0, dtype=torch.float32)
         self.t1 = torch.tensor(
             [(i + 1) * delta_t for i in range(future_steps)], dtype=torch.float32
@@ -650,6 +652,15 @@ class WellDatasetInterface(GenericPhysicsDataset):
         })
         self.required_fields = ["velocity_x", "velocity_y"]
         self.well_dataset = WellDataset(**well_dataset_args)
+        
+        flat_field_names = {
+            name for names in self.well_dataset.field_names.values() for name in names
+        }
+        missing_fields = [f for f in self.required_fields if f not in flat_field_names]
+        if missing_fields:
+            print(f"[Info] The following required fields are missing and will be padded with zeros: {missing_fields}")
+        self.missing_fields = missing_fields  # store for use in __getitem__
+
 
     def __len__(self):
         return len(self.well_dataset)
@@ -662,11 +673,10 @@ class WellDatasetInterface(GenericPhysicsDataset):
         output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
 
         H, W = input_fields.shape[1:]
-        field_names = self.well_dataset.field_names
-        for req_field in field_names:
-            if req_field not in field_names:
-                print(f"Field '{req_field}' missing — inserting zeros")
-                input_fields = torch.cat([input_fields, torch.zeros((1, H, W))],  dim=0)
+        
+        for _ in self.missing_fields:
+            input_fields = torch.cat([input_fields, torch.zeros((1, H, W))], dim=0)
+            output_fields = torch.cat([output_fields, torch.zeros((output_fields.shape[0], 1, H, W))], dim=1)
 
 
         # Handle constant scalars if they exist
