@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import logging
 from tqdm import tqdm
+from the_well.data import WellDataset
 
 # TODO: Wipe out this entire file. Instead, implement the following classes:
 # class Dataset(torch.utils.data.Dataset):
@@ -618,3 +619,67 @@ def initial_condition_collate_fn(batch):
     target = None
 
     return ic, t0, t1, target
+
+
+
+
+class WellDatasetInterface(GenericPhysicsDataset):
+    def __init__(
+        self,
+        future_steps,
+        min_val,
+        max_val,
+        delta_t,
+        add_constant_sclars,
+        well_dataset_args,
+    ):
+        self.future_steps = future_steps
+        self.min_val = min_val
+        self.max_val = max_val
+        self.delta_t = delta_t
+        self.add_constant_scalars = add_constant_sclars
+        # Initialize a cache for memory-mapped files to improve performance
+        self._memmap_cache = {}
+        self.t0 = torch.tensor(0.0, dtype=torch.float32)
+        self.t1 = torch.tensor(
+            [(i + 1) * delta_t for i in range(future_steps)], dtype=torch.float32
+        )
+
+        well_dataset_args.update({
+            "n_steps_input": 1,
+            "n_steps_output": future_steps,
+            "flatten_tensors": True,
+        })
+
+        self.well_dataset = WellDataset(**well_dataset_args)
+
+    def __len__(self):
+        return len(self.well_dataset)
+
+    def __getitem__(self, idx):
+        sample = self.well_dataset[idx]
+
+        # Extract input fields: [1, H, W, C] -> [C, H, W]
+        input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
+        output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
+
+        H, W = input_fields.shape[1:]
+
+        # Handle constant scalars if they exist
+        if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0:
+            const_vals = sample["constant_scalars"]  # [num_constants]
+            const_channels = [torch.full((H, W), val.item()) for val in const_vals]
+            const_stack = torch.stack(const_channels, dim=0)  # [C0, H, W]
+        else:
+            const_stack = torch.empty((0, H, W))  # No constant scalars
+
+        # Final input condition: [C0 + C1, H, W]
+        ic = torch.cat([const_stack, input_fields], dim=0)
+
+        # Final ground truth: [T, C0 + C1, H, W]
+        gt = torch.cat([
+            torch.cat([const_stack, output_fields[t]], dim=0).unsqueeze(0)
+            for t in range(output_fields.shape[0])
+        ], dim=0)
+
+        return ic, self.t0, self.t1, gt
