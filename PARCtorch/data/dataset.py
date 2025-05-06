@@ -650,7 +650,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
             "n_steps_output": future_steps,
             "flatten_tensors": True,
         })
-
+        self.required_fields = ["velocity_x", "velocity_y"]
         self.well_dataset = WellDataset(**well_dataset_args)
 
     def __len__(self):
@@ -664,6 +664,12 @@ class WellDatasetInterface(GenericPhysicsDataset):
         output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
 
         H, W = input_fields.shape[1:]
+        field_names = self.well_dataset.field_names
+        for req_field in field_names:
+            if req_field not in field_names:
+                print(f"Field '{req_field}' missing — inserting zeros")
+                input_fields = torch.cat([input_fields, torch.zeros((1, H, W))],  dim=0)
+
 
         # Handle constant scalars if they exist
         if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0:
