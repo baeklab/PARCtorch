@@ -54,10 +54,10 @@ class PARC(ABC, nn.Module):
     def check_msg(self, check):
         if check == -1:
             print(
-                f"WARNING: parameter configuration does not match with the manuscript and performance may vary."
+                "WARNING: parameter configuration does not match with the manuscript and performance may vary."
             )
         elif check == 1:
-            print(f"parameter configuration match with the manuscript.")
+            print("parameter configuration match with the manuscript.")
         else:
             raise ValueError(f"{check} is not supported. please report to GitHub issue")
 

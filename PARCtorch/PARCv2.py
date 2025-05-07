@@ -1,4 +1,3 @@
-import torch.nn as nn
 import torch
 
 from PARCtorch.utilities.unet import UNet

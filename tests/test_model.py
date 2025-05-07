@@ -19,7 +19,7 @@ def test_PARCv2():
     test_model(model)
 
     # check function
-    assert model.check() == 1, f"ERROR: default manuscript configuration"
+    assert model.check() == 1, "ERROR: default manuscript configuration"
 
     model = PARCv2(loss=torch.nn.MSELoss)
-    assert model.check() == 0, f"ERROR: warning system not working properly"
+    assert model.check() == 0, "ERROR: warning system not working properly"
