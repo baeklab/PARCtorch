@@ -41,7 +41,7 @@ class PARCv2(PARC):
                 unet,
                 "constant",
                 right_diff,
-                spade_random_noise=False,
+                spade_random_noise=True,
             ).cuda()
 
         if integrator is None:
