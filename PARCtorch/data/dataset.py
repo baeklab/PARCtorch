@@ -638,7 +638,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
 
         This class wraps the WellDataset and adapts it to return input/output tensors in the 
         format expected by PARCTorch, including optional handling of missing required 
-        fields and constant scalars.
+        fields (velocity) and constant scalars.
 
         Args:
             future_steps (int): Number of future timesteps the model should predict.
@@ -664,6 +664,8 @@ class WellDatasetInterface(GenericPhysicsDataset):
             "n_steps_output": future_steps,
             "flatten_tensors": True,
         })
+
+        # Velocity is currently the only required field for PARCTorch
         self.required_fields = ["velocity_x", "velocity_y"]
         self.well_dataset = WellDataset(**well_dataset_args)
         
