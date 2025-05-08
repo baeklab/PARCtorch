@@ -633,6 +633,22 @@ class WellDatasetInterface(GenericPhysicsDataset):
         add_constant_scalars,
         well_dataset_args,
     ):
+        """
+        Initializes the WellDatasetInterface.
+
+        This class wraps the WellDataset and adapts it to return input/output tensors in the 
+        format expected by PARCTorch, including optional handling of missing required 
+        fields and constant scalars.
+
+        Args:
+            future_steps (int): Number of future timesteps the model should predict.
+            min_val (torch.Tensor): Tensor containing the minimum normalization values for each channel.
+            max_val (torch.Tensor): Tensor containing the maximum normalization values for each channel.
+            delta_t (float): Time interval between each timestep.
+            add_constant_scalars (bool): Whether to include constant scalar fields (e.g., f, k, t_cool, ..., etc.) in the inputs and targets.
+            well_dataset_args (dict): Keyword arguments to initialize the underlying WellDataset.
+                                    Must include keys like 'well_base_path', 'well_dataset_name', and 'well_split_name'.
+        """
         self.future_steps = future_steps
         self.min_val = min_val
         self.max_val = max_val
