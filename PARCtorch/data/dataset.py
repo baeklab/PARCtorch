@@ -626,12 +626,13 @@ def initial_condition_collate_fn(batch):
 class WellDatasetInterface(GenericPhysicsDataset):
     def __init__(
         self,
+        well_dataset_args,
         future_steps = 1,
         min_val = None,
         max_val = None,
         delta_t = 1.0,
         add_constant_scalars = True,
-        well_dataset_args = None,
+        
     ):
         """
         Initializes the WellDatasetInterface.
@@ -641,13 +642,14 @@ class WellDatasetInterface(GenericPhysicsDataset):
         fields (velocity) and constant scalars.
 
         Args:
+            well_dataset_args (dict): Keyword arguments to initialize the underlying WellDataset.
+                                    Must include keys like 'well_base_path', 'well_dataset_name', and 'well_split_name'.
             future_steps (int): Number of future timesteps the model should predict.
             min_val (torch.Tensor): Tensor containing the minimum normalization values for each channel.
             max_val (torch.Tensor): Tensor containing the maximum normalization values for each channel.
             delta_t (float): Time interval between each timestep.
             add_constant_scalars (bool): Whether to include constant scalar fields (e.g., f, k, t_cool, ..., etc.) in the inputs and targets.
-            well_dataset_args (dict): Keyword arguments to initialize the underlying WellDataset.
-                                    Must include keys like 'well_base_path', 'well_dataset_name', and 'well_split_name'.
+
         """
         self.future_steps = future_steps
         self.min_val = min_val
