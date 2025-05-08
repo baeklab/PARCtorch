@@ -671,13 +671,13 @@ class WellDatasetInterface(GenericPhysicsDataset):
         
         # WellDataset stores field names in a dict grouped by tensor order (e.g., 0: scalars, 1: vectors)
         # Flatten all field names into a single set for easy required field checking
-        flat_field_names = {
+        field_names = {
             name for names in self.well_dataset.field_names.values() for name in names
         }
 
         # Identify which required fields are missing from the dataset and need zero-padding
         # This will evoke if the velocity_x, or velocity_y fields are missing like in the gray_scott_reaction_diffusion dataset
-        missing_fields = [f for f in self.required_fields if f not in flat_field_names]
+        missing_fields = [f for f in self.required_fields if f not in field_names]
 
         if missing_fields:
             print(f"[Info] The following required fields are missing and will be padded with zeros: {missing_fields}")
