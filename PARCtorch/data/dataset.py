@@ -638,8 +638,6 @@ class WellDatasetInterface(GenericPhysicsDataset):
         self.max_val = max_val
         self.delta_t = delta_t
         self.add_constant_scalars = add_constant_scalars
-        # Initialize a cache for memory-mapped files to improve performance
-        #self._memmap_cache = {}
         self.t0 = torch.tensor(0.0, dtype=torch.float32)
         self.t1 = torch.tensor(
             [(i + 1) * delta_t for i in range(future_steps)], dtype=torch.float32
@@ -653,13 +651,20 @@ class WellDatasetInterface(GenericPhysicsDataset):
         self.required_fields = ["velocity_x", "velocity_y"]
         self.well_dataset = WellDataset(**well_dataset_args)
         
+        # WellDataset stores field names in a dict grouped by tensor order (e.g., 0: scalars, 1: vectors)
+        # Flatten all field names into a single set for easy required field checking
         flat_field_names = {
             name for names in self.well_dataset.field_names.values() for name in names
         }
+
+        # Identify which required fields are missing from the dataset and need zero-padding
         missing_fields = [f for f in self.required_fields if f not in flat_field_names]
+
         if missing_fields:
             print(f"[Info] The following required fields are missing and will be padded with zeros: {missing_fields}")
-        self.missing_fields = missing_fields  # store for use in __getitem__
+
+        # store for use in __getitem__
+        self.missing_fields = missing_fields
 
 
     def __len__(self):
@@ -669,6 +674,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
         sample = self.well_dataset[idx]
 
         # Extract input fields: [1, H, W, C] -> [C, H, W]
+        # C1 is number of field channels
         input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
         output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
 
@@ -678,8 +684,8 @@ class WellDatasetInterface(GenericPhysicsDataset):
             input_fields = torch.cat([input_fields, torch.zeros((1, H, W))], dim=0)
             output_fields = torch.cat([output_fields, torch.zeros((output_fields.shape[0], 1, H, W))], dim=1)
 
-
         # Handle constant scalars if they exist
+        # C0 is number of constant field channels
         if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0 and self.add_constant_scalars:
             const_vals = sample["constant_scalars"]  # [num_constants]
             const_channels = [torch.full((H, W), val.item()) for val in const_vals]
@@ -688,6 +694,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
         else:
             include_const = False  # No constant scalars added
 
+        # C0 + C1 is total number of channels after concatenating constants + fields
         # Final input condition: [C0 + C1, H, W]
         if include_const:
             ic = torch.cat([const_stack, input_fields], dim=0)
