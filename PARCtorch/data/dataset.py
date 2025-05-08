@@ -626,12 +626,12 @@ def initial_condition_collate_fn(batch):
 class WellDatasetInterface(GenericPhysicsDataset):
     def __init__(
         self,
-        future_steps,
-        min_val,
-        max_val,
-        delta_t,
-        add_constant_scalars,
-        well_dataset_args,
+        future_steps = 1,
+        min_val = None,
+        max_val = None,
+        delta_t = 1.0,
+        add_constant_scalars = True,
+        well_dataset_args = None,
     ):
         """
         Initializes the WellDatasetInterface.
