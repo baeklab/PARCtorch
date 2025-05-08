@@ -658,6 +658,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
         }
 
         # Identify which required fields are missing from the dataset and need zero-padding
+        # This will evoke if the velocity_x, or velocity_y fields are missing like in the gray_scott_reaction_diffusion dataset
         missing_fields = [f for f in self.required_fields if f not in flat_field_names]
 
         if missing_fields:
