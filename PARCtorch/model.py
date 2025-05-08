@@ -49,22 +49,3 @@ class PARC(ABC, nn.Module):
         """
         return self.integrator(self.differentiator, ic, t0, t1)
 
-    def check_msg(self, check):
-        if check == -1:
-            print(
-                "WARNING: parameter configuration does not match with the manuscript and performance may vary."
-            )
-        elif check == 1:
-            print("parameter configuration match with the manuscript.")
-        else:
-            raise ValueError(f"{check} is not supported. please report to GitHub issue")
-
-    @abstractmethod
-    def check(self):
-        """
-        checks if the configuration setup matches with the manuscript
-
-        Returns
-        check (int): 1 if configuration match the correct usage of the differentiator, integrator, and loss. -1 if not 1 and 0.
-        """
-        pass
