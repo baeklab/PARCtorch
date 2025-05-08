@@ -1,5 +1,5 @@
 import torch.nn as nn
-from abc import ABC, abstractmethod
+from abc import ABC 
 
 
 class PARC(ABC, nn.Module):
