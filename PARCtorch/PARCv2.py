@@ -46,8 +46,6 @@ class PARCv2(PARC):
 
         if integrator is None:
             rk4 = RK4().cuda()
-            print(rk4)
-            print(right_diff)
             integrator = Integrator(
                 True, [], rk4, [None] * 5, "constant", right_diff
             ).cuda()
@@ -55,9 +53,6 @@ class PARCv2(PARC):
         if loss is None:
             loss = torch.nn.L1Loss().cuda()
         super(PARCv2, self).__init__(differentiator, integrator, loss, **kwargs)
-
-        # print( self.differentiator, self.integrator, self.loss )
-        print(type(self.differentiator), type(self.integrator), type(self.loss))
 
     def check(self):
         diff = True if isinstance(self.differentiator, ADRDifferentiator) else False

@@ -19,12 +19,10 @@ class PARC(ABC, nn.Module):
         An instance of PARC model
         """
         super(PARC, self).__init__(**kwargs)
-        print("superclass reached")
         self.differentiator = differentiator
         self.integrator = integrator
         self.loss = loss
         check = self.check()
-        print(check)
         self.check_msg(check)
 
     def freeze_differentiator(self):
