@@ -667,6 +667,8 @@ class WellDatasetInterface(GenericPhysicsDataset):
             "flatten_tensors": True,
         })
 
+        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion"]
+
         # Velocity is currently the only required field for PARCTorch
         self.required_fields = ["velocity_x", "velocity_y"]
         self.well_dataset = WellDataset(**well_dataset_args)
@@ -682,6 +684,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
         missing_fields = [f for f in self.required_fields if f not in field_names]
 
         if missing_fields:
+            print("WARNING, PARCv2 will not work properly without velocity fields.")
             print(f"[Info] The following required fields are missing and will be padded with zeros: {missing_fields}")
 
         # store for use in __getitem__
@@ -699,6 +702,9 @@ class WellDatasetInterface(GenericPhysicsDataset):
         input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
         output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
 
+        if self.well_dataset.well_dataset_name not in self.validated_datasets:
+            print("WARNING, this dataset has not been verified with PARCv2. Confirm orientation of x and y before proceeding.")
+        # This is validated to work with the only 
         H, W = input_fields.shape[1:]
         
         for _ in self.missing_fields:
@@ -715,8 +721,23 @@ class WellDatasetInterface(GenericPhysicsDataset):
         else:
             include_const = False  # No constant scalars added
 
+        # C0 is number of constant field channels
+        if "constant_fields" in sample and sample["constant_fields"].numel() > 0 and self.add_constant_scalars:
+            const_field_val = sample["constant_fields"]  # [num_constants]
+            include_const_fields = True
+        else:
+            include_const_fields = False  # No constant scalars added
+
         # C0 + C1 is total number of channels after concatenating constants + fields
         # Final input condition: [C0 + C1, H, W]
+
+        if include_const_fields:
+            ic = torch.cat([const_field_val, input_fields], dim=0)
+        else:
+            ic = input_fields
+
+        # C0 + C1 is total number of channels after concatenating constants + fields
+        # Final input condition: [C0 + C1, H, W]   
         if include_const:
             ic = torch.cat([const_stack, input_fields], dim=0)
         else:
