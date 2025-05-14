@@ -1,4 +1,4 @@
 torch>=2.0.0
 numpy
-matplotlib
+matplotlib==3.9.0
 tqdm
