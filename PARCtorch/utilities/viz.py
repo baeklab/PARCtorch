@@ -180,7 +180,6 @@ def visualize_channels(
     plt.show()
 
 
-# Visualization Function
 def save_gifs_with_ground_truth(
     predictions,
     ground_truth,
@@ -190,55 +189,120 @@ def save_gifs_with_ground_truth(
     interval=0.1,
     batch_idx=0,
 ):
-    """
-    Save a sequence of predictions and ground truth as GIFs for each channel.
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import imageio
 
-    Args:
-        predictions (torch.Tensor): Predictions tensor of shape (timesteps, batch_size, channels, height, width).
-        ground_truth (torch.Tensor): Ground truth tensor of shape (timesteps, batch_size, channels, height, width).
-        channels (list of str): Channel names.
-        cmaps (list of str): Colormaps for each channel.
-        filename_prefix (str): Prefix for GIF filenames.
-        interval (float): Time between frames.
-        batch_idx (int): Batch index to visualize.
-    """
+    prediction_sequence = predictions[:, batch_idx].cpu()
+    ground_truth_sequence = ground_truth[:, batch_idx].cpu()
 
-    prediction_sequence = predictions[
-        :, batch_idx
-    ].cpu()  # Shape: (timesteps, channels, height, width)
-    ground_truth_sequence = ground_truth[
-        :, batch_idx
-    ].cpu()  # Shape: (timesteps, channels, height, width)
+    global_min_max = []
+    for i in range(prediction_sequence.shape[1]):
+        pred_data = prediction_sequence[:, i, :, :].numpy()
+        gt_data = ground_truth_sequence[:, i, :, :].numpy()
+        combined_data = np.concatenate([pred_data, gt_data], axis=0)
+        global_min = combined_data.min()
+        global_max = combined_data.max()
+        global_min_max.append((global_min, global_max))
 
     for i, channel_name in enumerate(channels):
         cmap = cmaps[i]
         frames = []
-        for t in range(prediction_sequence.shape[0]):
-            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        vmin, vmax = global_min_max[i]
 
-            # Prediction
-            ax = axes[0]
-            pred_frame = prediction_sequence[t, i].numpy()
-            im = ax.imshow(pred_frame, cmap=cmap)
-            ax.set_title(f"Predicted - Timestep {t+1}")
-            ax.axis("off")
-            fig.colorbar(im, ax=ax)
+        for t in range(prediction_sequence.shape[0]):
+            fig, axes = plt.subplots(
+                1, 2, figsize=(9, 4.5),
+                gridspec_kw={'width_ratios': [1, 1], 'wspace': 0.05},
+                constrained_layout=False  # manual layout
+            )
+
+            # Adjust spacing to leave room for the colorbar
+            plt.subplots_adjust(left=0.05, right=0.88, top=0.92, bottom=0.08)
 
             # Ground Truth
-            ax = axes[1]
+            ax_gt = axes[0]
             gt_frame = ground_truth_sequence[t, i].numpy()
-            im = ax.imshow(gt_frame, cmap=cmap)
-            ax.set_title(f"Ground Truth - Timestep {t+1}")
-            ax.axis("off")
-            fig.colorbar(im, ax=ax)
+            im_gt = ax_gt.imshow(gt_frame, cmap=cmap, vmin=vmin, vmax=vmax)
+            ax_gt.set_title(f"Ground Truth - Timestep {t+1}")
+            ax_gt.axis("off")
+
+            # Prediction
+            ax_pred = axes[1]
+            pred_frame = prediction_sequence[t, i].numpy()
+            ax_pred.imshow(pred_frame, cmap=cmap, vmin=vmin, vmax=vmax)
+            ax_pred.set_title(f"Predicted - Timestep {t+1}")
+            ax_pred.axis("off")
+
+            # Add colorbar in reserved space on far right
+            cbar_ax = fig.add_axes([0.90, 0.3, 0.015, 0.4])  # [left, bottom, width, height]
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            fig.colorbar(sm, cax=cbar_ax)
 
             fig.canvas.draw()
-            image = np.frombuffer(
-                fig.canvas.tostring_rgb(), dtype="uint8"
-            ).reshape(fig.canvas.get_width_height()[::-1] + (3,))
-            frames.append(image)
+            rgba = np.asarray(fig.canvas.buffer_rgba())
+            img = rgba[..., :3]
+            frames.append(img)
             plt.close(fig)
 
         gif_filename = f"{filename_prefix}_{channel_name}.gif"
         imageio.mimsave(gif_filename, frames, duration=interval, loop=0)
         print(f"GIF saved to {gif_filename}")
+
+def save_comparison_snapshots(
+    predictions,      # tensor of shape (T, B, C, H, W)
+    ground_truth,     # same shape
+    channels,         # list of C channel names
+    cmaps,            # list of C matplotlib colormaps
+    filename_prefix="snapshot",
+    num_snapshots=4,
+    batch_idx=0
+):
+    """
+    For each channel, pick `num_snapshots` timesteps evenly spaced through T,
+    plot GT on top row, prediction on bottom row, then save to PNG.
+    """
+    # bring data to CPU numpy
+    pred_seq = predictions[:, batch_idx].cpu().numpy()  # (T, C, H, W)
+    gt_seq   = ground_truth[:, batch_idx].cpu().numpy()
+    T, C, H, W = pred_seq.shape
+
+    # compute snapshot indices
+    snap_idxs = np.linspace(0, T-1, num_snapshots, dtype=int)
+
+    for i, ch_name in enumerate(channels):
+        cmap = cmaps[i]
+        # compute vmin/vmax across both GT & pred for this channel
+        data_concat = np.concatenate([pred_seq[:,i], gt_seq[:,i]], axis=0)
+        vmin, vmax = data_concat.min(), data_concat.max()
+
+        # create figure
+        fig, axes = plt.subplots(2, num_snapshots,
+                                 figsize=(4*num_snapshots, 8),
+                                 constrained_layout=False)
+        # plot each snapshot
+        for j, t in enumerate(snap_idxs):
+            ax_gt   = axes[0, j]
+            ax_pred = axes[1, j]
+
+            ax_gt.imshow(  gt_seq[t, i],   cmap=cmap, vmin=vmin, vmax=vmax)
+            ax_pred.imshow(pred_seq[t, i], cmap=cmap, vmin=vmin, vmax=vmax)
+
+            ax_gt.set_title(f"GT t={t+1}")
+            ax_pred.set_title(f"Pred t={t+1}")
+            ax_gt.axis("off");  ax_pred.axis("off")
+
+        # add single colorbar on the right
+        fig.subplots_adjust(right=0.88, top=0.95, bottom=0.05, wspace=0.02)
+        cbar_ax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm.set_array([])
+        fig.colorbar(sm, cax=cbar_ax)
+
+        # save and clean up
+        out_fname = f"{filename_prefix}_{ch_name}_snapshots.png"
+        fig.savefig(out_fname, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        print(f"Saved snapshots for channel '{ch_name}' → {out_fname}")
