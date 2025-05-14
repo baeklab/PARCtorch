@@ -1,4 +1,6 @@
+fsspec>=2025.3.2
 torch>=2.0.0
 numpy
 matplotlib
 tqdm
+the_well
