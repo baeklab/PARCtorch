@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import logging
 from tqdm import tqdm
+from the_well.data import WellDataset
 
 # TODO: Wipe out this entire file. Instead, implement the following classes:
 # class Dataset(torch.utils.data.Dataset):
@@ -618,3 +619,140 @@ def initial_condition_collate_fn(batch):
     target = None
 
     return ic, t0, t1, target
+
+
+
+
+class WellDatasetInterface(GenericPhysicsDataset):
+    def __init__(
+        self,
+        well_dataset_args,
+        future_steps = 1,
+        min_val = None,
+        max_val = None,
+        delta_t = 1.0,
+        add_constant_scalars = True,
+        
+    ):
+        """
+        Initializes the WellDatasetInterface.
+
+        This class wraps the WellDataset and adapts it to return input/output tensors in the 
+        format expected by PARCTorch, including optional handling of missing required 
+        fields (velocity) and constant scalars.
+
+        Args:
+            well_dataset_args (dict): Keyword arguments to initialize the underlying WellDataset.
+                                    Must include keys like 'well_base_path', 'well_dataset_name', and 'well_split_name'.
+            future_steps (int): Number of future timesteps the model should predict.
+            min_val (torch.Tensor): Tensor containing the minimum normalization values for each channel.
+            max_val (torch.Tensor): Tensor containing the maximum normalization values for each channel.
+            delta_t (float): Time interval between each timestep.
+            add_constant_scalars (bool): Whether to include constant scalar fields (e.g., f, k, t_cool, ..., etc.) in the inputs and targets.
+
+        """
+        self.future_steps = future_steps
+        self.min_val = min_val
+        self.max_val = max_val
+        self.delta_t = delta_t
+        self.add_constant_scalars = add_constant_scalars
+        self.t0 = torch.tensor(0.0, dtype=torch.float32)
+        self.t1 = torch.tensor(
+            [(i + 1) * delta_t for i in range(future_steps)], dtype=torch.float32
+        )
+
+        well_dataset_args.update({
+            "n_steps_input": 1,
+            "n_steps_output": future_steps,
+            "flatten_tensors": True,
+        })
+
+        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion"]
+
+        # Velocity is currently the only required field for PARCTorch
+        self.required_fields = ["velocity_x", "velocity_y"]
+        self.well_dataset = WellDataset(**well_dataset_args)
+        
+        # WellDataset stores field names in a dict grouped by tensor order (e.g., 0: scalars, 1: vectors)
+        # Flatten all field names into a single set for easy required field checking
+        field_names = {
+            name for names in self.well_dataset.field_names.values() for name in names
+        }
+
+        # Identify which required fields are missing from the dataset and need zero-padding
+        # This will evoke if the velocity_x, or velocity_y fields are missing like in the gray_scott_reaction_diffusion dataset
+        missing_fields = [f for f in self.required_fields if f not in field_names]
+
+        if missing_fields:
+            print("WARNING, PARCv2 will not work properly without velocity fields.")
+            print(f"[Info] The following required fields are missing and will be padded with zeros: {missing_fields}")
+
+        # store for use in __getitem__
+        self.missing_fields = missing_fields
+
+
+    def __len__(self):
+        return len(self.well_dataset)
+
+    def __getitem__(self, idx):
+        sample = self.well_dataset[idx]
+
+        # Extract input fields: [1, H, W, C] -> [C, H, W]
+        # C1 is number of field channels
+        input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
+        output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
+
+        if self.well_dataset.well_dataset_name not in self.validated_datasets:
+            print("WARNING, this dataset has not been verified with PARCv2. Confirm orientation of x and y before proceeding.")
+            
+        # This is validated to work with the only 
+        H, W = input_fields.shape[1:]
+        
+        for _ in self.missing_fields:
+            input_fields = torch.cat([input_fields, torch.zeros((1, H, W))], dim=0)
+            output_fields = torch.cat([output_fields, torch.zeros((output_fields.shape[0], 1, H, W))], dim=1)
+
+        # Handle constant scalars if they exist
+        # C0 is number of constant field channels
+        if "constant_scalars" in sample and sample["constant_scalars"].numel() > 0 and self.add_constant_scalars:
+            const_vals = sample["constant_scalars"]  # [num_constants]
+            const_channels = [torch.full((H, W), val.item()) for val in const_vals]
+            const_stack = torch.stack(const_channels, dim=0)  # [C0, H, W]
+            include_const = True
+        else:
+            include_const = False  # No constant scalars added
+
+        # C0 is number of constant field channels
+        if "constant_fields" in sample and sample["constant_fields"].numel() > 0 and self.add_constant_scalars:
+            const_field_val = sample["constant_fields"]  # [num_constants]
+            include_const_fields = True
+        else:
+            include_const_fields = False  # No constant scalars added
+
+        # C0 + C1 is total number of channels after concatenating constants + fields
+        # Final input condition: [C0 + C1, H, W]
+
+        if include_const_fields:
+            ic = torch.cat([const_field_val, input_fields], dim=0)
+        else:
+            ic = input_fields
+
+        # C0 + C1 is total number of channels after concatenating constants + fields
+        # Final input condition: [C0 + C1, H, W]   
+        if include_const:
+            ic = torch.cat([const_stack, input_fields], dim=0)
+        else:
+            ic = input_fields
+
+        # Final ground truth: [T, C0 + C1, H, W]
+        gt_list = []
+        for t in range(output_fields.shape[0]):
+            if include_const:
+                gt_t = torch.cat([const_stack, output_fields[t]], dim=0)
+            else:
+                gt_t = output_fields[t]
+            gt_list.append(gt_t.unsqueeze(0))  # [1, C, H, W]
+
+        gt = torch.cat(gt_list, dim=0)  # [T, C, H, W]
+
+        return ic, self.t0, self.t1, gt

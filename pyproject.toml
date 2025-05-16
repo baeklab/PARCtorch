@@ -12,7 +12,7 @@ authors = [
 ]
 description = "Physics-aware Recurrent Convolutional Neural Networks (PARCv2) in PyTorch"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -28,6 +28,7 @@ dependencies = {file = ["requirements.txt"]}
 
 [tool.ruff]
 line-length = 79
+exclude = ["./tests"]
 
 [project.urls]
 Homepage = "https://github.com/baeklab/PARCtorch"
