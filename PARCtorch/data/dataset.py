@@ -667,7 +667,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
             "flatten_tensors": True,
         })
 
-        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion"]
+        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion", "shear_flow"]
 
         # Velocity is currently the only required field for PARCTorch
         self.required_fields = ["velocity_x", "velocity_y"]
