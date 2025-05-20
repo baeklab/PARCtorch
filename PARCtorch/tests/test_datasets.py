@@ -1,6 +1,12 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+
 from PARCtorch.data.dataset import WellDatasetInterface
 from the_well.data import WellDataset
 import torch
+import pytest
 
 """
 # TODO: JC & XC to flesh out the test code below --> CW
@@ -37,7 +43,14 @@ def is_same_shape(expected, actual):
             return False
     return True
 
+def check_directory():
+    directory_path = "/standard/sds_baek_energetic/data/physics/the_well/datasets/"
+    if os.path.exists(directory_path):
+        return True
+    else: 
+        return False
 
+@pytest.mark.skipif(not check_directory(), reason="Default WellDataset directory does not exist")
 def test_dataset_thewell_trl2d():
     """
     Test WellDataset on turbulent_radiative_layer_2d
@@ -72,6 +85,7 @@ def test_dataset_thewell_trl2d():
         assert (gt[:, 0, :, :] == ic[0, 0, 0]).all()
 
 
+@pytest.mark.skipif(not check_directory(), reason="Default WellDataset directory does not exist")
 def test_dataset_thewell_trl2d_noconstant():
     """
     Test WellDataset on turbulent_radiative_layer_2d
@@ -103,6 +117,7 @@ def test_dataset_thewell_trl2d_noconstant():
         assert is_same_shape([future_steps, 4, 384, 128], gt.shape)
 
 
+@pytest.mark.skipif(not check_directory(), reason="Default WellDataset directory does not exist")
 def test_dataset_thewell_gsrd():
     """
     Test WellDataset on gray_scott_reaction_diffusion
