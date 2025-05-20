@@ -1,5 +1,6 @@
 from PARCtorch.data.dataset import WellDatasetInterface
 from the_well.data import WellDataset
+import os
 import torch
 import pytest
 
