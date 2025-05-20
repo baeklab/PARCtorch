@@ -1,11 +1,7 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
-
 import json
 import numpy as np
+import os
 import tempfile
-import pytest
 from unittest import mock
 from PARCtorch.data.normalization import compute_min_max
 

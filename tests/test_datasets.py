@@ -1,8 +1,3 @@
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
-
 from PARCtorch.data.dataset import WellDatasetInterface
 from the_well.data import WellDataset
 import torch

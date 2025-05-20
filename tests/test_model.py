@@ -1,7 +1,3 @@
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
 from PARCtorch.PARCv2 import PARCv2
 from PARCtorch.differentiator.differentiator import ADRDifferentiator
 from PARCtorch.integrator.rk4 import RK4
