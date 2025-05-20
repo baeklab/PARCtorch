@@ -2,10 +2,10 @@ import torch
 
 from PARCtorch.utilities.unet import UNet
 from PARCtorch.differentiator.finitedifference import FiniteDifference
-from differentiator.differentiator import ADRDifferentiator
-from integrator.rk4 import RK4
-from integrator.integrator import Integrator
-from model import PARC
+from PARCtorch.differentiator.differentiator import ADRDifferentiator
+from PARCtorch.integrator.rk4 import RK4
+from PARCtorch.integrator.integrator import Integrator
+from PARCtorch.model import PARC
 
 
 class PARCv2(PARC):
