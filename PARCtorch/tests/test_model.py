@@ -1,9 +1,10 @@
 import sys
-sys.path.append("../")
+import os
 
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
 from PARCtorch.PARCv2 import PARCv2
-from differentiator.differentiator import ADRDifferentiator
-from integrator.rk4 import RK4
+from PARCtorch.differentiator.differentiator import ADRDifferentiator
+from PARCtorch.integrator.rk4 import RK4
 import torch
 
 def test_model(model=PARCv2()):
