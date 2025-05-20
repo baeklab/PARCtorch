@@ -53,6 +53,7 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
     _, channels, _, _ = sample_data.shape
     channel_min = [np.inf] * channels
     channel_max = [-np.inf] * channels
+    velocity_max = -np.inf  # for the last two channels
 
     print("Calculating channel-wise min and max values for normalization...")
     print("Current working directory:", os.getcwd())
@@ -87,16 +88,21 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
                 if current_max > channel_max[channel_idx]:
                     channel_max[channel_idx] = current_max
             else:
-                # Special logic for last two channels: min is fixed at 0
-                if current_max > channel_max[channel_idx]:
-                    channel_max[channel_idx] = current_max
-                channel_min[channel_idx] = 0  # always set to 0
+                # Collect max for last two channels only
+                if current_max > velocity_max:
+                    velocity_max = current_max
 
 
         # Provide progress updates every 100 files or at the end
         if (file_idx + 1) % 100 == 0 or (file_idx + 1) == len(all_files):
             print(f"Processed {file_idx + 1}/{len(all_files)} files.")
 
+    # Velocity min is always zero
+    channel_min[-2] = 0
+    channel_min[-1] = 0
+    # Set max velocity using both velocity channels
+    channel_max[-2] = velocity_max
+    channel_max[-1] = velocity_max
     print("Channel-wise min values:", channel_min)
     print("Channel-wise max values:", channel_max)
 
