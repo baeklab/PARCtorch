@@ -1,6 +1,7 @@
 fsspec>=2025.3.2
-torch>=2.0.0
-numpy
 matplotlib
-tqdm
+numpy
+pytest
 the_well
+torch>=2.0.0
+tqdm
