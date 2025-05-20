@@ -28,7 +28,7 @@ dependencies = {file = ["requirements.txt"]}
 
 [tool.ruff]
 line-length = 79
-exclude = ["PARCtorch/tests"]
+exclude = ["./tests"]
 
 [project.urls]
 Homepage = "https://github.com/baeklab/PARCtorch"
