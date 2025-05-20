@@ -79,10 +79,19 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
             channel_data = data[:, channel_idx, :, :]
             current_min = channel_data.min()
             current_max = channel_data.max()
-            if current_min < channel_min[channel_idx]:
-                channel_min[channel_idx] = current_min
-            if current_max > channel_max[channel_idx]:
-                channel_max[channel_idx] = current_max
+
+            # Regular logic
+            if channel_idx < channels - 2:
+                if current_min < channel_min[channel_idx]:
+                    channel_min[channel_idx] = current_min
+                if current_max > channel_max[channel_idx]:
+                    channel_max[channel_idx] = current_max
+            else:
+                # Special logic for last two channels: min is fixed at 0
+                if current_max > channel_max[channel_idx]:
+                    channel_max[channel_idx] = current_max
+                channel_min[channel_idx] = 0  # always set to 0
+
 
         # Provide progress updates every 100 files or at the end
         if (file_idx + 1) % 100 == 0 or (file_idx + 1) == len(all_files):
