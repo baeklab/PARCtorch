@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 import logging
 from tqdm import tqdm
 from the_well.data import WellDataset
+from the_well.data.datasets import BoundaryCondition
 
 # TODO: Wipe out this entire file. Instead, implement the following classes:
 # class Dataset(torch.utils.data.Dataset):
@@ -697,10 +698,29 @@ class WellDatasetInterface(GenericPhysicsDataset):
     def __getitem__(self, idx):
         sample = self.well_dataset[idx]
 
+        # Tensor of shape [n_dims, 2]
+        boundary_condition = sample["boundary_conditions"] 
+
+        # y-direction is dimension 1
+        # Tensor: [lower, upper] for y
+        y_boundary_condition = boundary_condition[1]
+
+        # Check if either side is open    
+        is_y_open = (
+            y_boundary_condition[0].item() == BoundaryCondition.OPEN.value or
+            y_boundary_condition[1].item() == BoundaryCondition.OPEN.value
+        )
+
         # Extract input fields: [1, H, W, C] -> [C, H, W]
         # C1 is number of field channels
-        input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
-        output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
+        # Flip H and W  if y boundary condition is open
+        if is_y_open:
+            input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, W, H]
+            output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, W, H]            
+        else:
+            input_fields = sample["input_fields"].squeeze(0).permute(2, 0, 1)  # [C1, H, W]
+            output_fields = sample["output_fields"].permute(0, 3, 1, 2)        # [T, C1, H, W]
+
 
         if self.well_dataset.well_dataset_name not in self.validated_datasets:
             print("WARNING, this dataset has not been verified with PARCv2. Confirm orientation of x and y before proceeding.")
