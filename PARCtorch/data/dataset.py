@@ -713,8 +713,8 @@ class WellDatasetInterface(GenericPhysicsDataset):
 
         # Extract input fields: [1, H, W, C] -> [C, H, W]
         # C1 is number of field channels
-        # Flip H and W  if y boundary condition is open
-        if is_y_open:
+        # Flip H and W  if y boundary condition is open for validated datasets only
+        if is_y_open and self.well_dataset.dataset_name in self.validated_datasets:
             input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, W, H]
             output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, W, H]            
         else:
