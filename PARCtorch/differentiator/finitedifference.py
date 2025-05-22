@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from PARCtorch.utilities.load import resolve_device
 
 
 class FiniteDifference(nn.Module):
@@ -23,7 +24,7 @@ class FiniteDifference(nn.Module):
         channel_size=1,
         filter_1d=np.array([-1.0, 1.0]),
         padding_mode="replicate",
-        device="cuda",
+        device=None,
         right_bottom=True,
     ):
         super(FiniteDifference, self).__init__()
@@ -32,6 +33,7 @@ class FiniteDifference(nn.Module):
         self.channel_size = channel_size
         self.filter_size = len(filter_1d)
         self.filter_1d = filter_1d
+        self.device = resolve_device(device)
 
         # Determine padding for dy and dx based on filter size
         # TensorFlow's padding:
@@ -59,7 +61,7 @@ class FiniteDifference(nn.Module):
             1, 1, self.filter_size, 1
         )
         self.register_buffer(
-            "dy_filter", dy_filter.repeat(channel_size, 1, 1, 1).to(device)
+            "dy_filter", dy_filter.repeat(channel_size, 1, 1, 1).to(self.device)
         )  # [C,1,filter_size,1]
 
         # Initialize dx_conv weights
@@ -67,7 +69,7 @@ class FiniteDifference(nn.Module):
             1, 1, 1, self.filter_size
         )
         self.register_buffer(
-            "dx_filter", dx_filter.repeat(channel_size, 1, 1, 1).to(device)
+            "dx_filter", dx_filter.repeat(channel_size, 1, 1, 1).to(self.device)
         )  # [C,1,1,filter_size]
 
     def forward(self, x):

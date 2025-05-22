@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from PARCtorch.integrator.poisson import PoissonBlock
+from PARCtorch.utilities.load import get_device
 
 
 class Integrator(nn.Module):
@@ -31,6 +32,7 @@ class Integrator(nn.Module):
         finite_difference_method: nn.Module,
         poi_kernel_size: int = 3,
         n_poi_features: int = 64,
+        device = None,
         **kwarg,
     ):
         super(Integrator, self).__init__(**kwarg)
@@ -39,6 +41,14 @@ class Integrator(nn.Module):
         self.list_datadriven_integrator = nn.ModuleList(list_dd_int)
         self.list_poi_idx = list_poi_idx
         self.list_poi = nn.ModuleList()
+        
+        # Device selection
+        if device is None:
+            device = get_device()
+        elif isinstance(device, str):
+            device = torch.device(device)
+        self.device = device
+
         # Initializing Poissons
         for each in list_poi_idx:
             self.list_poi.append(
@@ -88,7 +98,7 @@ class Integrator(nn.Module):
                         i
                     ](
                         torch.index_select(
-                            current, 1, torch.tensor(idx_poi_in).cuda()
+                            current, 1, torch.tensor(idx_poi_in).to(self.device)
                         )
                     )
                 )

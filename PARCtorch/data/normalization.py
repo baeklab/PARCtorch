@@ -53,6 +53,8 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
     _, channels, _, _ = sample_data.shape
     channel_min = [np.inf] * channels
     channel_max = [-np.inf] * channels
+    min_norm = np.inf
+    max_norm = -np.inf
 
     print("Calculating channel-wise min and max values for normalization...")
     print("Current working directory:", os.getcwd())
@@ -79,15 +81,32 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
             channel_data = data[:, channel_idx, :, :]
             current_min = channel_data.min()
             current_max = channel_data.max()
-            if current_min < channel_min[channel_idx]:
-                channel_min[channel_idx] = current_min
-            if current_max > channel_max[channel_idx]:
-                channel_max[channel_idx] = current_max
+
+            # Regular logic
+            if channel_idx < channels - 2:
+                if current_min < channel_min[channel_idx]:
+                    channel_min[channel_idx] = current_min
+                if current_max > channel_max[channel_idx]:
+                    channel_max[channel_idx] = current_max
+          
+        # Compute velocity norm from last two channels
+        velocity_data = data[:, -2:, :, :] 
+        norm_map = np.linalg.norm(velocity_data, axis=1)
+        sorted_norm_map = np.sort(norm_map.flatten())
+        min_norm = min(min_norm, sorted_norm_map[0])
+        max_norm = max(max_norm, sorted_norm_map[-1])
 
         # Provide progress updates every 100 files or at the end
         if (file_idx + 1) % 100 == 0 or (file_idx + 1) == len(all_files):
             print(f"Processed {file_idx + 1}/{len(all_files)} files.")
 
+    # Set min velocity using both velocity channels
+    channel_min[-2] = min_norm
+    channel_min[-1] = min_norm
+    # Set max velocity using both velocity channels
+    channel_max[-2] = max_norm
+    channel_max[-1] = max_norm
+    
     print("Channel-wise min values:", channel_min)
     print("Channel-wise max values:", channel_max)
 

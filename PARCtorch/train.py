@@ -2,14 +2,19 @@ import os
 import torch
 from tqdm import tqdm
 import pickle  # Import pickle to save the loss
+from PARCtorch.utilities.load import resolve_device
 
 # Training loop with tqdm for progress bars
 def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir, app):
+
+    # Device selection
+    device = resolve_device()
+
     # Ensure the save directory exists
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    model = model.cuda()  # Move model to GPU
+    model = model.to(device)  # Move model to GPU
     all_losses = []  # List to store epoch losses
 
     for epoch in range(1, num_epochs + 1):
@@ -28,10 +33,10 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir,
             ic, t0, t1, gt = batch  # Unpack the batch tuple
 
             # Move data to GPU
-            ic = ic.cuda()
-            t0 = t0.cuda()
-            t1 = t1.cuda()
-            gt = gt.cuda()
+            ic = ic.to(device) 
+            t0 = t0.to(device) 
+            t1 = t1.to(device) 
+            gt = gt.to(device) 
 
             # Zero the parameter gradients
             optimizer.zero_grad()

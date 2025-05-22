@@ -1,9 +1,6 @@
-import sys
-sys.path.append("../")
-
 from PARCtorch.PARCv2 import PARCv2
-from differentiator.differentiator import ADRDifferentiator
-from integrator.rk4 import RK4
+from PARCtorch.differentiator.differentiator import ADRDifferentiator
+from PARCtorch.integrator.rk4 import RK4
 import torch
 
 def test_model(model=PARCv2()):
