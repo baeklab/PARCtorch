@@ -2,15 +2,13 @@ import os
 import torch
 from tqdm import tqdm
 import pickle  # Import pickle to save the loss
-from PARCtorch.utilities.load import get_device
+from PARCtorch.utilities.load import resolve_device
 
 # Training loop with tqdm for progress bars
 def train_model(model, train_loader, criterion, optimizer, num_epochs, save_dir, app):
 
     # Device selection
-    device = get_device()
-    if isinstance(device, str):
-        device = torch.device(device)
+    device = resolve_device()
 
     # Ensure the save directory exists
     if not os.path.exists(save_dir):

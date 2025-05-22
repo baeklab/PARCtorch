@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from PARCtorch.utilities.load import get_device
+from PARCtorch.utilities.load import resolve_device
 
 
 class FiniteDifference(nn.Module):
@@ -33,13 +33,7 @@ class FiniteDifference(nn.Module):
         self.channel_size = channel_size
         self.filter_size = len(filter_1d)
         self.filter_1d = filter_1d
-
-        # Device selection
-        if device is None:
-            device = get_device()
-        elif isinstance(device, str):
-            device = torch.device(device)
-        self.device = device
+        self.device = resolve_device(device)
 
         # Determine padding for dy and dx based on filter size
         # TensorFlow's padding:

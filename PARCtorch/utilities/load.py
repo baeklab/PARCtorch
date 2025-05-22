@@ -40,5 +40,19 @@ def get_device():
         return torch.device("mps")
     else:
         return torch.device("cpu")
+    
+def resolve_device(device=None):
+    """
+    Resolves the device based on input or availability.
+
+    Args:
+        device (str or torch.device, optional): Preferred device string or object.
+
+    Returns:
+        torch.device: The resolved device (e.g., 'cuda', 'mps', or 'cpu').
+    """
+    if device is None:
+        return get_device()
+    return torch.device(device)
 
 

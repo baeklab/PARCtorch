@@ -6,7 +6,7 @@ from PARCtorch.differentiator.differentiator import ADRDifferentiator
 from PARCtorch.integrator.rk4 import RK4
 from PARCtorch.integrator.integrator import Integrator
 from PARCtorch.model import PARC
-from PARCtorch.utilities.load import get_device
+from PARCtorch.utilities.load import resolve_device
 
 
 class PARCv2(PARC):
@@ -26,11 +26,7 @@ class PARCv2(PARC):
         An instance of PARCv2
         """
         
-        # Device selection
-        if device is None:
-            device = get_device()
-        elif isinstance(device, str):
-            device = torch.device(device)
+        device = resolve_device(device)
 
         right_diff = FiniteDifference(padding_mode="replicate", device=device).to(device)
         if differentiator is None:
