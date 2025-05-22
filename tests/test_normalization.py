@@ -3,6 +3,7 @@ import json
 import numpy as np
 import tempfile
 from unittest import mock
+import pytest
 from PARCtorch.data.normalization import compute_min_max
 
 def create_test_npy(path, shape, fill_values_per_channel):
@@ -45,9 +46,8 @@ def test_compute_min_max_combined_last_two_channel_max(mock_print):
         assert channel_max[1] == 5.0
 
         # Channels 2 and 3: special logic
-        assert channel_min[2] == 0.0
-        assert channel_min[3] == 0.0
+        assert channel_min[2] == 5 # min of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
+        assert channel_min[3] == 5 # min of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
 
-        expected_velocity_max = max([3.0, 4.0, 8.0, 6.0, 7.0, 9.0])  # across all ch2 and ch3 values
-        assert channel_max[2] == expected_velocity_max
-        assert channel_max[3] == expected_velocity_max
+        assert pytest.approx(channel_max[2], 1e-3) == 11.4 # max of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
+        assert pytest.approx(channel_max[3], 1e-3) == 11.4# max of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
