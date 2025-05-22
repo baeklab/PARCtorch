@@ -92,9 +92,9 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
         # Compute velocity norm from last two channels
         velocity_data = data[:, -2:, :, :] 
         norm_map = np.linalg.norm(velocity_data, axis=1)
-
-        min_norm = min(min_norm, norm_map.min())
-        max_norm = max(max_norm, norm_map.max())
+        sorted_norm_map = np.sort(norm_map.flatten())
+        min_norm = min(min_norm, sorted_norm_map[0])
+        max_norm = max(max_norm, sorted_norm_map[-1])
 
         # Provide progress updates every 100 files or at the end
         if (file_idx + 1) % 100 == 0 or (file_idx + 1) == len(all_files):
