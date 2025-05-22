@@ -20,7 +20,7 @@ def load_model_weights(model, weights_path, device):
         )
 
     # Load the state dictionary
-    state_dict = torch.load(weights_path, map_location=device)
+    state_dict = torch.load(weights_path, map_location=device, weights_only=True)
     model.load_state_dict(state_dict)
     print(f"Loaded model weights from '{weights_path}'")
 

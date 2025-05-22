@@ -1,7 +1,8 @@
 fsspec>=2025.3.2
-matplotlib
+matplotlib>=3.9.0
 numpy
 pytest
 the_well
+
 torch>=2.0.0
 tqdm
