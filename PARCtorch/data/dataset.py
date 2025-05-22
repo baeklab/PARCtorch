@@ -6,7 +6,6 @@ from torch.utils.data import Dataset
 import logging
 from tqdm import tqdm
 from the_well.data import WellDataset
-from the_well.data.datasets import BoundaryCondition
 
 # TODO: Wipe out this entire file. Instead, implement the following classes:
 # class Dataset(torch.utils.data.Dataset):
