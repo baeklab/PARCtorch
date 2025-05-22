@@ -698,19 +698,6 @@ class WellDatasetInterface(GenericPhysicsDataset):
     def __getitem__(self, idx):
         sample = self.well_dataset[idx]
 
-        # Tensor of shape [n_dims, 2]
-        boundary_condition = sample["boundary_conditions"] 
-
-        # y-direction is dimension 1
-        # Tensor: [lower, upper] for y
-        y_boundary_condition = boundary_condition[1]
-
-        # Check if either side is open    
-        is_y_open = (
-            y_boundary_condition[0].item() == BoundaryCondition.OPEN.value or
-            y_boundary_condition[1].item() == BoundaryCondition.OPEN.value
-        )
-
         # Extract input fields: [1, H, W, C] -> [C, H, W]
         # C1 is number of field channels
         # Flip H and W  or turbulent_radiative_layer_2D dataset
