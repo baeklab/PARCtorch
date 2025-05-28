@@ -3,7 +3,7 @@ from the_well.data.datasets import WellDataset
 from PARCtorch.data.dataset import WellDatasetInterface
 
 
-def test_well_dataset_interface_loading(dummy_datapath):
+def test_well_dataset_interface_loading(patch_well_dataset_getitem, dummy_datapath):
     # Setup args expected by WellDataset
     well_dataset_args = {
         "path": str(dummy_datapath.parent)
@@ -56,7 +56,7 @@ def test_well_dataset_interface_loading(dummy_datapath):
         assert (ic[-padded_channels:] == 0).all(), "Padded channels should be zeros"
 
 
-def test_velocity_fields_are_loaded(dummy_datapath):
+def test_velocity_fields_are_loaded(patch_well_dataset_getitem, dummy_datapath):
     well_dataset_args = {
         "path": str(dummy_datapath.parent)
     }
@@ -75,7 +75,7 @@ def test_velocity_fields_are_loaded(dummy_datapath):
     ic, _, _, gt = dataset[0]
 
     # Determine the number of channels before and after padding (there should be no change)
-    # Since we didn't add constant scalars, all channels come from input_fields
+    # Since we did not add constant scalars, all channels come from input_fields
     input_channel_count = ic.shape[0]
     gt_channel_count = gt.shape[1]
 
@@ -83,7 +83,7 @@ def test_velocity_fields_are_loaded(dummy_datapath):
     assert gt_channel_count == 2, "input shape"
 
     # There should be no zero-padded channels at the end
-    # Check the last few slices aren't all zeros
+    # Check the last few slices are not all zeros
     last_input_channel = ic[-1]
     last_gt_channel = gt[0, -1]
 

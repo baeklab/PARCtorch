@@ -6,7 +6,7 @@ from the_well.data.datasets import WellDataset
 import torch
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def patch_well_dataset_getitem(monkeypatch):
     def fake_getitem(self, idx):
         return {
@@ -17,8 +17,6 @@ def patch_well_dataset_getitem(monkeypatch):
 
     monkeypatch.setattr(WellDataset, "__getitem__", fake_getitem)
     monkeypatch.setattr(WellDataset, "__len__", lambda self: 2)  # Optional for indexing
-
-
 
 def write_dummy_data(filename: Path, velocity_field_name="velocity"):
     """Create dummy data following the Well formating for testing purposes
@@ -137,18 +135,14 @@ def write_dummy_data(filename: Path, velocity_field_name="velocity"):
         dset.attrs["sample_varying"] = True
         dset.attrs["time_varying"] = True
 
-        # Add velocity_x and velocity_y
-        # Just use copies of t1_field_values[..., 0] and t1_field_values[..., 1] as dummy data
+        # Add velocity
+        # Using copies of t1_field_values[..., 0]as dummy data
         vel_x = t1_field_values[..., 0]  # [n_trajectories, dim_t, dim_x, dim_y]
 
         dset = group.create_dataset(velocity_field_name, data=vel_x)
         dset.attrs["dim_varying"] = [True, True]
         dset.attrs["sample_varying"] = False
         dset.attrs["time_varying"] = True
-
-        ############# T2 Fields ###############
-        group = file.create_group("t2_fields")
-        group.attrs["field_names"] = []
 
 
 @pytest.fixture(scope="session")
@@ -164,6 +158,6 @@ def dummy_datapath(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def dummy_datapath_with_u(tmp_path_factory: pytest.TempPathFactory) -> Path:
     data_dir = tmp_path_factory.mktemp("train_u")
     file = data_dir / "dummy_u_dataset.hdf5"
-    write_dummy_data(file, velocity_field_names="u")
+    write_dummy_data(file, velocity_field_name="u")
     return file
 
