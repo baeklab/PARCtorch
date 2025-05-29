@@ -122,7 +122,7 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
     channel_mean = [s / c if c > 0 else 0.0 for s, c in zip(channel_sum, total_count)]
 
     # Comput channel std dev: 
-    # channel_sum_sq: Accumulated total of squares (i.e., sum(x^2))
+    # sq: Accumulated total of squares (i.e., sum(x^2))
     # c: count of elements
     # m : mean computed above
 
