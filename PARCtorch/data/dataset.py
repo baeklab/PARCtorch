@@ -667,7 +667,7 @@ class WellDatasetInterface(GenericPhysicsDataset):
             "flatten_tensors": True,
         })
 
-        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion"]
+        self.validated_datasets = ["turbulent_radiative_layer_2D", "gray_scott_reaction_diffusion", "shear_flow"]
 
         # Velocity is currently the only required field for PARCTorch
         self.required_fields = ["velocity_x", "velocity_y"]
@@ -699,8 +699,14 @@ class WellDatasetInterface(GenericPhysicsDataset):
 
         # Extract input fields: [1, H, W, C] -> [C, H, W]
         # C1 is number of field channels
-        input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, H, W]
-        output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, H, W]
+        # Flip H and W  or turbulent_radiative_layer_2D dataset
+        if self.well_dataset.dataset_name == "turbulent_radiative_layer_2D":
+            input_fields = sample["input_fields"].squeeze(0).permute(2, 1, 0)  # [C1, W, H]
+            output_fields = sample["output_fields"].permute(0, 3, 2, 1)        # [T, C1, W, H]            
+        else:
+            input_fields = sample["input_fields"].squeeze(0).permute(2, 0, 1)  # [C1, H, W]
+            output_fields = sample["output_fields"].permute(0, 3, 1, 2)        # [T, C1, H, W]
+
 
         if self.well_dataset.well_dataset_name not in self.validated_datasets:
             print("WARNING, this dataset has not been verified with PARCv2. Confirm orientation of x and y before proceeding.")

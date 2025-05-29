@@ -147,3 +147,35 @@ def test_dataset_thewell_gsrd():
         # This dataset does not have velocity, so the last 2 channels must be zero
         assert (ic[4:, :, :] == 0.0).all()
         assert (gt[:, 4:, :, :] == 0.0).all()
+
+
+def test_dataset_thewell_shear_flow():
+    """
+    Test WellDataset on shear flow
+    """
+    future_steps = 7
+    ds = WellDatasetInterface(
+        future_steps=future_steps,
+        min_val=torch.tensor([0.0] * 6),
+        max_val=torch.tensor([1.0] * 6),
+        delta_t=1.0,
+        add_constant_scalars=True,
+        well_dataset_args={
+            "well_base_path": "/standard/sds_baek_energetic/data/physics/the_well/datasets/",
+            "well_dataset_name": "shear_flow",
+            "well_split_name": "test",
+            "use_normalization": False,
+        },
+    )
+    
+    for each in ds:
+        ic, t0, t1, gt = each
+        assert is_same_shape([6, 512, 256], ic.shape)  # Reynolds, Schmidt, tracer, pressure, velocity_x, velocity_y
+        assert is_same_shape([], t0.shape)
+        assert is_same_shape([future_steps], t1.shape)
+        assert is_same_shape([future_steps, 6, 512, 256], gt.shape)
+        # First and second channels are the constants,
+        assert (ic[0, :, :] == ic[0, 0, 0]).all()
+        assert (ic[1, :, :] == ic[1, 0, 0]).all()
+        assert (gt[:, 1, :, :] == ic[1, 0, 0]).all()
+        assert (gt[:, 0, :, :] == ic[0, 0, 0]).all()
