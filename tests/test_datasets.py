@@ -149,6 +149,7 @@ def test_dataset_thewell_gsrd():
         assert (gt[:, 4:, :, :] == 0.0).all()
 
 
+@pytest.mark.skipif(not check_directory(), reason="Default WellDataset directory does not exist")
 def test_dataset_thewell_shear_flow():
     """
     Test WellDataset on shear flow
