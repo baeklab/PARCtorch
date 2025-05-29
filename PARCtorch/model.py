@@ -22,8 +22,6 @@ class PARC(ABC, nn.Module):
         self.differentiator = differentiator
         self.integrator = integrator
         self.loss = loss
-        check = self.check()
-        self.check_msg(check)
 
     def freeze_differentiator(self):
         """

@@ -144,6 +144,9 @@ def write_dummy_data(filename: Path, velocity_field_name="velocity"):
         dset.attrs["sample_varying"] = False
         dset.attrs["time_varying"] = True
 
+        ############# T2 Fields ###############
+        group = file.create_group("t2_fields")
+        group.attrs["field_names"] = []
 
 @pytest.fixture(scope="session")
 def dummy_datapath(tmp_path_factory: pytest.TempPathFactory) -> Path:
