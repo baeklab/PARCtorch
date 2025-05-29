@@ -61,5 +61,5 @@ def test_compute_min_max_combined_last_two_channel_max(mock_print):
         # Check vector with largest norm
         max_vec = result["max_norm_velocity_vector"]
         assert isinstance(max_vec, list)
-        assert len(max_vec) == 2  # ch2 and ch3
+        assert len(max_vec) == 2  # channel 2 and channel 3
         assert pytest.approx(np.linalg.norm(max_vec), abs=1e-3) == expected_max_norm
