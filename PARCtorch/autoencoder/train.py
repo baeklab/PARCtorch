@@ -1,28 +1,9 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-import torch.nn.functional as F
 
 from autoencoder import *
-from utils import * 
-
-class ConvolutionalAutoencoder:
-    def __init__(self, autoencoder, optimizer, device, save_path=None, weights_name=None):
-        self.network = autoencoder.to(device)
-        self.optimizer = optimizer
-        self.device = device
-        self.save_path = save_path
-        self.weights_name = weights_name
-
-    def autoencode(self, x):
-        return self.network(x)
-
-    def encode(self, x):
-        return self.network.encoder(x)
-
-    def decode(self, x):
-        return self.network.decoder(x)
-    
+from utils import save_model, save_log, add_random_noise
 
 def train_autoencoder(model, optimizer, loss_function, train_loader, val_loader, 
                       device, epochs=10, image_size=(64, 64), n_channels=3, 
@@ -70,8 +51,6 @@ def train_autoencoder(model, optimizer, loss_function, train_loader, val_loader,
             for val_images in tqdm(val_loader, desc="Validating"):
                 val_images = val_images[0][:, 0:n_channels, ...].to(device)
                 
-                # val_images = F.interpolate(val_images, size=(image_size[0], image_size[1]), mode='bilinear', align_corners=False) #!!! for MLP
-
                 # Forward pass
                 output = model(val_images)
                 val_loss = loss_function(output, val_images.view(-1, n_channels, *image_size))

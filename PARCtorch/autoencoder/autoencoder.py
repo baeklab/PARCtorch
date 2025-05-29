@@ -133,7 +133,7 @@ class Autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return decoded
     
-class Autoencoder_separate(nn.Module):
+class AutoencoderSeparate(nn.Module):
     def __init__(self, encoder_T, encoder_P, encoder_M, decoder_T, decoder_P, decoder_M):
         '''
         Wrapper for autoencoder with 3 encoders and 3 decoders handling all data channels separate. Right now this is hard coded to be just for 3 channels corresponding to EM data (though any data with 3 channels would be compatible).
@@ -158,4 +158,19 @@ class Autoencoder_separate(nn.Module):
         
         return decoded
     
+class ConvolutionalAutoencoder:
+    def __init__(self, autoencoder, optimizer, device, save_path=None, weights_name=None):
+        self.network = autoencoder.to(device)
+        self.optimizer = optimizer
+        self.device = device
+        self.save_path = save_path
+        self.weights_name = weights_name
 
+    def autoencode(self, x):
+        return self.network(x)
+
+    def encode(self, x):
+        return self.network.encoder(x)
+
+    def decode(self, x):
+        return self.network.decoder(x)

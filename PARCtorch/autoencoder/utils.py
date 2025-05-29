@@ -31,13 +31,21 @@ def add_random_noise(images, min_val=0.0, max_val=0.1):
     noisy_images = images + noise
     return torch.clamp(noisy_images, 0.0, 1.0)  # Keep pixel values in [0, 1]
 
-class LpLoss(torch.nn.Module):
-    def __init__(self, p=10):
+class LpLoss(nn.Module):
+    def __init__(self, p=10, reduction='mean'):
         super(LpLoss, self).__init__()
         self.p = p
+        if reduction not in ('none', 'mean', 'sum'):
+            raise ValueError(f"Invalid reduction mode: {reduction}")
+        self.reduction = reduction
 
     def forward(self, input, target):
-        # Compute element-wise absolute difference
-        diff = torch.abs(input - target)
-        # Raise the differences to the power of p, sum them, and raise to the power of 1/p
-        return (torch.sum(diff ** self.p) ** (1 / self.p))
+        diff = torch.abs(input - target) ** self.p
+        loss = torch.sum(diff, dim=tuple(range(1, diff.ndim))) ** (1 / self.p)  # norm per sample
+
+        if self.reduction == 'mean':
+            return torch.mean(loss)
+        elif self.reduction == 'sum':
+            return torch.sum(loss)
+        else:  # 'none'
+            return loss
