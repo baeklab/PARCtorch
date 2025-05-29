@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from PARCtorch.utilities.resnet import ResNet
+from PARCtorch.models.resnet import ResNet
 
 
 class Poisson(nn.Module):

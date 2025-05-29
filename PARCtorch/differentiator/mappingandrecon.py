@@ -3,8 +3,8 @@
 import torch.nn as nn
 
 # Import custom utilities
-from PARCtorch.utilities.spade import SPADEGeneratorUnit
-from PARCtorch.utilities.resnet import ResNet
+from PARCtorch.models.spade import SPADEGeneratorUnit
+from PARCtorch.models.resnet import ResNet
 
 
 class MappingAndRecon(nn.Module):

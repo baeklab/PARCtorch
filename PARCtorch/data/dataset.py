@@ -7,7 +7,7 @@ import logging
 from tqdm import tqdm
 from the_well.data import WellDataset
 
-# TODO: Wipe out this entire file. Instead, implement the following classes:
+# TODO: Wipe out this entire file. Instead, implement the following classes under PARCtorch/datasets/dataset.py:
 # class Dataset(torch.utils.data.Dataset):
 # class RegularMeshDataset(Dataset):
 # class IrregularMeshDataset(Dataset):

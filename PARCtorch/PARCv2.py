@@ -1,6 +1,6 @@
 import torch
 
-from PARCtorch.utilities.unet import UNet
+from PARCtorch.models.unet import UNet
 from PARCtorch.differentiator.finitedifference import FiniteDifference
 from differentiator.differentiator import ADRDifferentiator
 from integrator.rk4 import RK4

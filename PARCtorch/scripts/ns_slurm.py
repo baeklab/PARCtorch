@@ -39,13 +39,13 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
 # ---------------------------
 from data.normalization import compute_min_max
 from data.dataset import GenericPhysicsDataset, custom_collate_fn
-from utilities.viz import visualize_channels
+from PARCtorch.utils.viz import visualize_channels
 from PARCtorch.PARCv2 import PARCv2
 from PARCtorch.differentiator.differentiator import Differentiator
 from PARCtorch.differentiator.finitedifference import FiniteDifference
 from PARCtorch.integrator.integrator import Integrator
 from PARCtorch.integrator.heun import Heun
-from PARCtorch.utilities.unet import UNet
+from PARCtorch.models.unet import UNet
 
 
 # ---------------------------
