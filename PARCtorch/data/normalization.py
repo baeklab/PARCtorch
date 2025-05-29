@@ -118,9 +118,16 @@ def compute_min_max(data_dirs, output_file="min_max.json"):
     channel_max[-2] = channel_max[-1] = max_norm
 
     # Finalize mean and std dev
+    # Compute channel mean: s is sum , c is count, mean = sum / count
     channel_mean = [s / c if c > 0 else 0.0 for s, c in zip(channel_sum, total_count)]
+
+    # Comput channel std dev: 
+    # channel_sum_sq: Accumulated total of squares (i.e., sum(x^2))
+    # c: count of elements
+    # m : mean computed above
+
     channel_std_dev = [
-        np.sqrt((sq / c) - (m ** 2)) if c > 0 else 0.0
+        np.sqrt((sq / c) - (m ** 2)) if c > 0 else 0.0 # E[X^2] - (E[X])^2
         for sq, c, m in zip(channel_sum_sq, total_count, channel_mean)
     ]
 
