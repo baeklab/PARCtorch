@@ -16,21 +16,20 @@ def create_test_npy(path, shape, fill_values_per_channel):
 @mock.patch("builtins.print")  # Mute prints during test
 def test_compute_min_max_combined_last_two_channel_max(mock_print):
     with tempfile.TemporaryDirectory() as tmpdir:
-        shape = (2, 4, 4, 4)  # small shape for test: (timesteps, channels, height, width)
-
-        # Each entry is [ch0, ch1, ch2, ch3] per file
+        shape = (2, 4, 4, 4)  # (timesteps, channels, H, W)
         values_list = [
-            [1.0, 2.0, 3.0, 4.0],  # Max in last two = 4.0
-            [0.0, 5.0, 8.0, 6.0],  # Max in last two = 8.0
-            [3.0, 1.0, 7.0, 9.0],  # Max in last two = 9.0 -> global max
+            [1.0, 2.0, 3.0, 4.0],  # ch2 = 3.0, ch3 = 4.0 -> norm ~5.0
+            [0.0, 5.0, 8.0, 6.0],  # ch2 = 8.0, ch3 = 6.0 -> norm ~10.0
+            [3.0, 1.0, 7.0, 9.0],  # ch2 = 7.0, ch3 = 9.0 -> norm ~11.4
         ]
 
+        # Save test files
         for i, values in enumerate(values_list):
             path = os.path.join(tmpdir, f"data_{i}.npy")
             create_test_npy(path, shape, values)
 
         output_path = os.path.join(tmpdir, "min_max.json")
-        compute_min_max([tmpdir], output_file=output_path)
+        result = compute_min_max([tmpdir], output_file=output_path)
 
         # Load and verify
         with open(output_path, "r") as f:
@@ -39,15 +38,28 @@ def test_compute_min_max_combined_last_two_channel_max(mock_print):
         channel_min = data["channel_min"]
         channel_max = data["channel_max"]
 
-        # Channels 0 and 1: standard behavior
-        assert channel_min[0] == 0.0  # min of [1.0, 0.0, 3.0]
+        # Channels 0 and 1: basic check
+        assert channel_min[0] == 0.0
         assert channel_max[0] == 3.0
-        assert channel_min[1] == 1.0  # min of [2.0, 5.0, 1.0]
+        assert channel_min[1] == 1.0
         assert channel_max[1] == 5.0
 
-        # Channels 2 and 3: special logic
-        assert channel_min[2] == 5 # min of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
-        assert channel_min[3] == 5 # min of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
+        # Expected velocity norms (same everywhere in each file)
+        expected_norms = [
+            np.sqrt(3**2 + 4**2),   # 5.0
+            np.sqrt(8**2 + 6**2),   # 10.0
+            np.sqrt(7**2 + 9**2),   # ~11.401
+        ]
+        expected_min_norm = min(expected_norms)
+        expected_max_norm = max(expected_norms)
 
-        assert pytest.approx(channel_max[2], 1e-3) == 11.4 # max of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
-        assert pytest.approx(channel_max[3], 1e-3) == 11.4# max of sqrt(9 + 16), sqrt(64 + 36), sqrt(49 + 81)
+        assert pytest.approx(channel_min[2], abs=1e-3) == expected_min_norm
+        assert pytest.approx(channel_min[3], abs=1e-3) == expected_min_norm
+        assert pytest.approx(channel_max[2], abs=1e-3) == expected_max_norm
+        assert pytest.approx(channel_max[3], abs=1e-3) == expected_max_norm
+
+        # Check vector with largest norm
+        max_vec = result["max_norm_velocity_vector"]
+        assert isinstance(max_vec, list)
+        assert len(max_vec) == 2  # ch2 and ch3
+        assert pytest.approx(np.linalg.norm(max_vec), abs=1e-3) == expected_max_norm
