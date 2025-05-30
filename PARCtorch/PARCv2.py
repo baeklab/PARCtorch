@@ -2,14 +2,15 @@ import torch
 
 from PARCtorch.utilities.unet import UNet
 from PARCtorch.differentiator.finitedifference import FiniteDifference
-from differentiator.differentiator import ADRDifferentiator
-from integrator.rk4 import RK4
-from integrator.integrator import Integrator
-from model import PARC
+from PARCtorch.differentiator.differentiator import ADRDifferentiator
+from PARCtorch.integrator.rk4 import RK4
+from PARCtorch.integrator.integrator import Integrator
+from PARCtorch.model import PARC
+from PARCtorch.utilities.load import resolve_device
 
 
 class PARCv2(PARC):
-    def __init__(self, differentiator=None, integrator=None, loss=None, **kwargs):
+    def __init__(self, differentiator=None, integrator=None, loss=None, device=None, **kwargs):
         """
         Constructor of PARCv2.
 
@@ -24,7 +25,10 @@ class PARCv2(PARC):
         -------
         An instance of PARCv2
         """
-        right_diff = FiniteDifference(padding_mode="replicate").cuda()
+        
+        device = resolve_device(device)
+
+        right_diff = FiniteDifference(padding_mode="replicate", device=device).to(device)
         if differentiator is None:
             unet = UNet(
                 [64, 64 * 2, 64 * 4, 64 * 8, 64 * 16],
@@ -42,14 +46,14 @@ class PARCv2(PARC):
                 "constant",
                 right_diff,
                 spade_random_noise=True,
-            ).cuda()
+            ).to(device)
 
         if integrator is None:
-            rk4 = RK4().cuda()
+            rk4 = RK4().to(device)
             integrator = Integrator(
                 True, [], rk4, [None] * 5, "constant", right_diff
-            ).cuda()
+            ).to(device)
 
         if loss is None:
-            loss = torch.nn.L1Loss().cuda()
+            loss = torch.nn.L1Loss().to(device)
         super(PARCv2, self).__init__(differentiator, integrator, loss, **kwargs)

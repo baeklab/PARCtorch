@@ -32,4 +32,27 @@ def load_model_weights(model, weights_path, device):
 
     return model
 
+def get_device():
+    """Returns the available device: CUDA, MPS or CPU."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
+    
+def resolve_device(device=None):
+    """
+    Resolves the device based on input or availability.
+
+    Args:
+        device (str or torch.device, optional): Preferred device string or object.
+
+    Returns:
+        torch.device: The resolved device (e.g., 'cuda', 'mps', or 'cpu').
+    """
+    if device is None:
+        return get_device()
+    return torch.device(device)
+
 
